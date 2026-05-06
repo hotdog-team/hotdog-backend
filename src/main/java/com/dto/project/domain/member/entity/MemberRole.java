@@ -1,0 +1,5 @@
+package com.dto.project.domain.member.entity;
+
+public enum MemberRole {
+
+}
