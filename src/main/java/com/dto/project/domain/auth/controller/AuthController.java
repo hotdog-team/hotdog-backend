@@ -2,7 +2,7 @@ package com.dto.project.domain.auth.controller;
 
 import com.dto.project.domain.auth.dto.AuthResponse;
 import com.dto.project.domain.auth.dto.LoginRequest;
-import com.dto.project.domain.auth.dto.SignupRequest;
+import com.dto.project.domain.member.dto.SignupRequest;
 import com.dto.project.domain.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

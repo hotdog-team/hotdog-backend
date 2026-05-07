@@ -60,4 +60,5 @@ public class Member {
         if (role != null) this.role = role;
         if (status != null) this.status = status;
     }
+    public void updateName(String name) { this.name = name; }
 }
