@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Table(name="meta_tags")
 public class MetaTagEntity {
     @Id
+    @GeneratedValue
     private int id;
     private String name;
     @Enumerated(EnumType.STRING)
