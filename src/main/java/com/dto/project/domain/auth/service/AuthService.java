@@ -1,9 +1,14 @@
 package com.dto.project.domain.auth.service;
 
-import com.dto.project.domain.auth.dto.*;
+import com.dto.project.domain.auth.dto.AuthResponse;
+import com.dto.project.domain.auth.dto.LoginRequest;
 import com.dto.project.domain.auth.jwt.JwtProvider;
+import com.dto.project.domain.member.dto.SignupRequest;
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.domain.member.repository.MemberTagWeightRepository;
+import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,9 +22,12 @@ import java.util.concurrent.TimeUnit;
 public class AuthService {
 
     private final MemberRepository memberRepository;
+    private final MemberTagWeightRepository memberTagWeightRepository;
+    private final MetaTagRepository metaTagRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final StringRedisTemplate redisTemplate;
+
 
     // 1. 회원가입
     @Transactional
@@ -28,7 +36,8 @@ public class AuthService {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
 
-        memberRepository.save(Member.builder()
+        // 회원 정보 먼저 저장
+        Member member = memberRepository.save(Member.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
@@ -38,9 +47,21 @@ public class AuthService {
                 .role("USER")
                 .status("ACTIVE")
                 .build());
+
+        if (request.getLifestyleTagIds() != null && !request.getLifestyleTagIds().isEmpty()) {
+            for (Long tagId : request.getLifestyleTagIds()) {
+                metaTagRepository.findById(tagId).ifPresent(metaTagEntity -> {
+                    memberTagWeightRepository.save(MemberTagWeight.builder()
+                            .member(member)
+                            .metaTag(metaTagEntity)
+                            .weightScore(20)
+                            .build());
+                });
+            }
+        }
     }
 
-    // 2. 로그인 (상태 검증 로직 추가)
+    // 2. 로그인
     @Transactional
     public AuthResponse login(LoginRequest request) {
         Member member = memberRepository.findByEmail(request.getEmail())

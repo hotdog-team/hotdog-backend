@@ -42,7 +42,7 @@ public class MetaTagService {
         metaTagRepository.save(entity);
     }
 
-    public void deleteMetaTag(int id) {
+    public void deleteMetaTag(long id) {
         MetaTagEntity entity = metaTagRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "MetaTag not found: " + id));
         entity.setStatus(MetaTagStatus.DELETED);
@@ -51,7 +51,7 @@ public class MetaTagService {
     }
 
     @Transactional(readOnly = true)
-    public MetaTagDTO detailViewMetaTag(int id) {
+    public MetaTagDTO detailViewMetaTag(long id) {
         MetaTagEntity entity = metaTagRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "MetaTag not found: " + id));
         return MetaTagDTO.toDTO(entity);
