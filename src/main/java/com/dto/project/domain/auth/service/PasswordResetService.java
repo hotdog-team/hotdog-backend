@@ -6,6 +6,7 @@ import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService; // EmailService 의존성 주입
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Transactional
     public void requestPasswordReset(String email) {
@@ -46,9 +50,10 @@ public class PasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        String resetLink = "http://localhost:5173/reset-password/" + token;
+        String resetLink = frontendUrl + "/reset-password/" + token;
         emailService.sendPasswordResetEmail(member.getEmail(), resetLink);
     }
+
     @Transactional
     public void confirmPasswordReset(String token, String newRawPassword) {
         // 토큰 조회
