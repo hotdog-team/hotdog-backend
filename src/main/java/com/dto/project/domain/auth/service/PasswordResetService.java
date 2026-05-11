@@ -46,7 +46,7 @@ public class PasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+        String resetLink = "http://localhost:5173/reset-password/" + token;
         emailService.sendPasswordResetEmail(member.getEmail(), resetLink);
     }
     @Transactional
