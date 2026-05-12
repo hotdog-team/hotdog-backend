@@ -6,15 +6,13 @@ import com.dto.project.domain.accessibility.entity.Accessibility;
 import com.dto.project.domain.accessibility.repository.AccessibilityRepository;
 import com.dto.project.domain.member.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 public class AccessibilityService {
@@ -63,11 +61,11 @@ public class AccessibilityService {
     private Long resolveMemberId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new ResponseStatusException(UNAUTHORIZED, "로그인이 필요합니다.");
+            throw new InsufficientAuthenticationException(null);
         }
         String email = auth.getName();
         return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "회원을 찾을 수 없습니다."))
+                .orElseThrow(() -> new InsufficientAuthenticationException("잘못된 사용자입니다."))
                 .getId();
     }
 }

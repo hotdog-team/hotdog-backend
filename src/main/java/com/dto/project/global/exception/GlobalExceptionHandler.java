@@ -2,6 +2,7 @@ package com.dto.project.global.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -94,9 +96,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException e, HttpServletRequest request) {
         ErrorCode code = ErrorCode.UNAUTHENTICATED;
+        String detail = StringUtils.hasText(e.getMessage())
+                ? e.getMessage()
+                : "로그인이 필요합니다.";
         ErrorResponse response = ErrorResponse.from(
                 code,
-                "로그인이 필요합니다.",
+                detail,
                 request.getRequestURI()
         );
         return ResponseEntity.status(code.getHttpStatus()).body(response);
@@ -106,38 +111,69 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
         ErrorCode code = ErrorCode.PERMISSION_DENIED;
-        ErrorResponse response = ErrorResponse.from(
-                code,
-                "해당 권한이 없습니다.",
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(code.getHttpStatus()).body(response);
-    }
-
-    // 404 NOT_FOUND - 리소스 없음
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException e, HttpServletRequest request) {
-        int status = e.getStatusCode().value();
-
-        if (status != ErrorCode.NOT_FOUND.getHttpStatus().value()) {
-            ErrorCode code = ErrorCode.INTERNAL;
-            ErrorResponse response = ErrorResponse.from(
-                    code,
-                    "알 수 없는 오류가 발생했습니다.",
-                    request.getRequestURI()
-            );
-            return ResponseEntity.status(code.getHttpStatus()).body(response);
-        }
-
-        ErrorCode code = ErrorCode.NOT_FOUND;
-        String detail = "찾는 결과가 없습니다.";
-
+        String detail = StringUtils.hasText(e.getMessage())
+                ? e.getMessage()
+                : "해당 권한이 없습니다.";
         ErrorResponse response = ErrorResponse.from(
                 code,
                 detail,
                 request.getRequestURI()
         );
+        return ResponseEntity.status(code.getHttpStatus()).body(response);
+    }
 
+    // ResponseStatusException - 401, 404 등의 처리(누락되어 수정했습니다)
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException e, HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        int raw = e.getStatusCode().value();
+        HttpStatus http = HttpStatus.resolve(raw);
+
+        if (http == null) {
+            ErrorResponse response = ErrorResponse.from(
+                    ErrorCode.INTERNAL,
+                    "알 수 없는 오류가 발생했습니다.",
+                    uri
+            );
+            return ResponseEntity.status(ErrorCode.INTERNAL.getHttpStatus()).body(response);
+        }
+
+        ErrorCode code = switch (http) {
+            case BAD_REQUEST -> ErrorCode.INVALID_ARGUMENT;
+            case UNAUTHORIZED -> ErrorCode.UNAUTHENTICATED;
+            case FORBIDDEN -> ErrorCode.PERMISSION_DENIED;
+            case NOT_FOUND -> ErrorCode.NOT_FOUND;
+            case CONFLICT -> ErrorCode.ABORTED;
+            default -> ErrorCode.INTERNAL;
+        };
+
+        if (code == ErrorCode.INTERNAL) {
+            String detail = StringUtils.hasText(e.getReason())
+                    ? e.getReason()
+                    : "알 수 없는 오류가 발생했습니다.";
+            ErrorResponse response = ErrorResponse.from(ErrorCode.INTERNAL, detail, uri);
+            return ResponseEntity.status(ErrorCode.INTERNAL.getHttpStatus()).body(response);
+        }
+
+        String detail = switch (http) {
+            case NOT_FOUND -> StringUtils.hasText(e.getReason()) ? e.getReason() : "찾는 결과가 없습니다.";
+            default -> StringUtils.hasText(e.getReason())
+                    ? e.getReason()
+                    : http.getReasonPhrase();
+        };
+
+        ErrorResponse response = ErrorResponse.from(code, detail, uri);
+        return ResponseEntity.status(http).body(response);
+    }
+
+    // IllegalArgumentException - 비즈니스 규칙 등 (팀: 409 ABORTED)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e, HttpServletRequest request) {
+        ErrorCode code = ErrorCode.ABORTED;
+        String detail = StringUtils.hasText(e.getMessage())
+                ? e.getMessage()
+                : "요청을 처리할 수 없습니다.";
+        ErrorResponse response = ErrorResponse.from(code, detail, request.getRequestURI());
         return ResponseEntity.status(code.getHttpStatus()).body(response);
     }
 
