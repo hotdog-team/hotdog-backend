@@ -5,12 +5,14 @@ import com.dto.project.domain.accessibility.dto.AccessibilityRequest;
 import com.dto.project.domain.accessibility.entity.Accessibility;
 import com.dto.project.domain.accessibility.repository.AccessibilityRepository;
 import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.global.exception.DefaultErrorDetailMessages;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -61,11 +63,11 @@ public class AccessibilityService {
     private Long resolveMemberId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new InsufficientAuthenticationException(null);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED);
         }
         String email = auth.getName();
         return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new InsufficientAuthenticationException("잘못된 사용자입니다."))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원 정보를 찾을 수 없습니다."))
                 .getId();
     }
 }

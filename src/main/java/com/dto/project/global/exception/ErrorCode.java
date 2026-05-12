@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     INVALID_ARGUMENT(HttpStatus.BAD_REQUEST),
     FAILED_PRECONDITION(HttpStatus.BAD_REQUEST),
-    OUT_OF_RANGE(HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(HttpStatus.UNAUTHORIZED),
     PERMISSION_DENIED(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
