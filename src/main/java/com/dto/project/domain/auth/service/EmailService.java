@@ -3,9 +3,11 @@ package com.dto.project.domain.auth.service;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -42,8 +44,7 @@ public class EmailService {
             log.info("비밀번호 재설정 메일 발송 성공: {}", to);
         } catch (Exception e) {
             log.error("메일 발송 중 오류 발생: {}", e.getMessage());
-            // 실제 운영 시에는 여기서 사용자 정의 예외를 던지는 방향으로 수정
-            throw new RuntimeException("메일 발송 실패", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메일 발송 중 서버 오류가 발생했습니다.");
         }
     }
 }
