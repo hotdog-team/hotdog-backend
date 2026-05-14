@@ -10,20 +10,26 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class MetaTagDTO {
-    private int id;
+public class MetaTagResponse {
+    private Long id;
     private String name;
     private MetaTagType type;
-    private MetaTagStatus status;
+    private MetaTagStatus metaTagStatus;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static MetaTagDTO toDTO(MetaTagEntity entity){
-        return MetaTagDTO.builder()
+    public static MetaTagResponse from(MetaTagEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        return MetaTagResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .type(entity.getType())
-                .status(entity.getStatus())
+                .metaTagStatus(entity.getMetaTagStatus())
+                .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
+
 }
