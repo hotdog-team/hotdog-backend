@@ -37,7 +37,7 @@ public class MetaTagController {
     }
 
     //메타태그 수정
-    @PostMapping("/api/admin/tags/{id}")
+    @PatchMapping("/api/admin/tags/{id}")
     public ResponseEntity<Void> updateTag(
             @PathVariable("id") Long id,
             @Valid @RequestBody MetaTagRequest request){
