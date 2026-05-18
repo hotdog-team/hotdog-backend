@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Table(name = "members")
 public class Member {
 
@@ -31,9 +33,14 @@ public class Member {
     @Column(name = "job_type", length = 100)
     private String jobType;
 
+    @Column(name = "is_job_recommend_enabled", nullable = false)
+    private boolean isJobRecommendEnabled;
+
+
     @Column(name = "lifestyle_tag", length = 100)
     private String lifestyleTag;
 
+    @Builder.Default
     @Column(length = 20)
     private String role = "USER";
 

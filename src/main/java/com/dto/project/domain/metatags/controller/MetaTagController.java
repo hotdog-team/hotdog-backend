@@ -1,68 +1,56 @@
 package com.dto.project.domain.metatags.controller;
 
-import com.dto.project.domain.metatags.dto.MetaTagDTO;
+import com.dto.project.domain.metatags.dto.MetaTagRequest;
+import com.dto.project.domain.metatags.dto.MetaTagResponse;
 import com.dto.project.domain.metatags.service.MetaTagService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 public class MetaTagController {
-    @Autowired
-    MetaTagService service;
+    private final MetaTagService metaTagService;
 
-    //메타 태그 조회
-    @GetMapping("/admin/tags/")
-    public String listAllMetaTags(Model model){
-        List<MetaTagDTO> mtgList = service.listAllMetaTag();
-        model.addAttribute("mtgList", mtgList);
-        return "admin/tags/tagListView";
+    public MetaTagController(MetaTagService metaTagService){
+        this.metaTagService = metaTagService;
     }
 
-    //메타 태그 등록 폼
-    @GetMapping("/admin/tags/newTagForm")
-    public String viewNewTagForm(){
-        return "admin/tags/newTagForm";
+    //메타태그 조회
+    @GetMapping("/api/tags")
+    public List<MetaTagResponse> listAllMetaTags() {
+        return metaTagService.listAllMetaTag();
     }
 
-    @PostMapping("/admin/tags/insertTag")
-    public String insertTag(MetaTagDTO mtgVo){
-        service.insertMetaTag(mtgVo);
-
-        return "redirect:/admin/tags";
+    //메타태그 상세 조회
+    @GetMapping("/api/tags/{id}")
+    public MetaTagResponse getTagDetail(@PathVariable("id") Long id){
+        return metaTagService.detailViewMetaTag(id);
     }
 
-    @GetMapping("/admin/tags/{id}")
-    public String viewDetailTag(@PathVariable int id, Model model){
-        MetaTagDTO mtgVo = service.detailViewMetaTag(id);
-        model.addAttribute("mtgVo", mtgVo);
-        return "admin/tags/viewDetailTag";
+    //메타태그 등록
+    @PostMapping("/api/admin/tags")
+    public ResponseEntity<Void> insertTag(@Valid @RequestBody MetaTagRequest request) {
+        metaTagService.insertMetaTag(request);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/admin/tags/updateTagForm/{id}")
-    public String viewUpdateTagForm(@PathVariable int id, Model model){
-        MetaTagDTO mtgVo = service.detailViewMetaTag(id);
-        model.addAttribute("mtgVo", mtgVo);
-        return "admin/tags/updateTagForm";
+    //메타태그 수정
+    @PostMapping("/api/admin/tags/{id}")
+    public ResponseEntity<Void> updateTag(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody MetaTagRequest request){
+        metaTagService.updateMetaTag(id, request);
+        return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/admin/tags/updateTag")
-    public String updateTag(MetaTagDTO mtgVo){
-        service.updateMetaTag(mtgVo);
-
-        return "redirect:/admin/tags";
+    //메타태그 삭제
+    @DeleteMapping("/api/admin/tags/{id}")
+    public ResponseEntity<Void> deleteTag(
+            @PathVariable("id") Long id){
+        metaTagService.deleteMetaTag(id);
+        return ResponseEntity.ok().build();
     }
 
-    @RequestMapping("/admin/tags/deleteTag/{id}")
-    public String deleteTag(@PathVariable int id){
-        service.deleteMetaTag(id);
-
-        return "redirect:/admin/tags";
-    }
 }
