@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
 @Table(name = "members")
 public class Member {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false, length = 255)
@@ -33,19 +34,24 @@ public class Member {
     @Column(name = "job_type", length = 100)
     private String jobType;
 
-    @Column(name = "is_job_recommend_enabled", nullable = false)
-    private boolean isJobRecommendEnabled;
-
-
-    @Column(name = "lifestyle_tag", length = 100)
-    private String lifestyleTag;
+    // 💡 기획 의도에 따라 lifestyleTag 제거
+    // 향후 MetaTag 엔티티와 별도 매핑 테이블을 통해 8가지 분류(Category, Seasonal, Purpose 등) 관리 예정
+    @Column(name = "purpose_id")
+    private Long purposeId;
 
     @Builder.Default
-    @Column(length = 20)
-    private String role = "USER";
+    @Column(name = "is_job_recommend_enabled", nullable = false)
+    private boolean isJobRecommendEnabled = true;
 
-    @Column(length = 30)
-    private String status = "ACTIVE";
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private MemberRole role = MemberRole.ROLE_USER;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30, nullable = false)
+    private MemberStatus status = MemberStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -55,20 +61,34 @@ public class Member {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Builder
-    public Member(String email, String password, String name, String ageRange, String jobType, String lifestyleTag, String role, String status) {
-        this.email = email;
-        this.password = password;
-        this.name = name;
-        this.ageRange = ageRange;
-        this.jobType = jobType;
-        this.lifestyleTag = lifestyleTag;
+    // ==========================================
+    // 비즈니스 로직 메서드
+    // ==========================================
 
-        if (role != null) this.role = role;
-        if (status != null) this.status = status;
+    /**
+     * 회원 프로필 수정
+     */
+    public void updateProfile(String name, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
+        if (name != null) this.name = name;
+        if (jobType != null) this.jobType = jobType;
+        if (purposeId != null) this.purposeId = purposeId;
+        if (isJobRecommendEnabled != null) this.isJobRecommendEnabled = isJobRecommendEnabled;
     }
-    public void updateName(String name) { this.name = name; }
 
+    /**
+     * 회원 탈퇴
+     */
+    public void withdraw() {
+        this.status = MemberStatus.WITHDRAWN;
+    }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * 비밀번호 수정
+     */
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }

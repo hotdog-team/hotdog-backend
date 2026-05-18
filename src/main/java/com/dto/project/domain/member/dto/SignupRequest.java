@@ -1,5 +1,6 @@
 package com.dto.project.domain.member.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -27,11 +28,12 @@ public class SignupRequest {
     // 2. 인적사항 및 취향 정보
     private String ageRange;      // 연령대
     private String jobType;       // 직종
-    private String lifestyleTag;  // 대표 라이프스타일 테마
+    private Long purposeId;       // 이용 목적
 
     // 3. 관심사 다중 선택 (member_tag_weights 초기 설정용)
-    private List<Long> lifestyleTagIds;
+    private List<Long> selectedTagIds;
 
     // 가입 시 동의 여부
+    @JsonProperty("isJobRecommendEnabled")
     private boolean isJobRecommendEnabled;
 }
