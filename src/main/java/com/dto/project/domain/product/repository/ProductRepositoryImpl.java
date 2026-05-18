@@ -1,6 +1,7 @@
 package com.dto.project.domain.product.repository;
 
 import com.dto.project.domain.product.dto.ProductResponse;
+import com.dto.project.domain.product.dto.ProductListResponse;
 import com.dto.project.domain.product.dto.ProductSearchCondition;
 import com.dto.project.domain.product.entity.Product;
 import jakarta.persistence.EntityManager;
@@ -16,7 +17,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private EntityManager em;
 
     @Override
-    public List<ProductResponse> searchProducts(ProductSearchCondition condition) {
+    public List<ProductListResponse> searchProducts(ProductSearchCondition condition) {
         String jpql = "SELECT p FROM Product p " +
                 "WHERE p.status = 'ON_SALE' " +
                 "ORDER BY p.createdAt DESC";
@@ -25,7 +26,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .getResultList();
 
         return products.stream()
-                .map(ProductResponse::new)
+                .map(ProductListResponse::new)
                 .toList();
     }
 
