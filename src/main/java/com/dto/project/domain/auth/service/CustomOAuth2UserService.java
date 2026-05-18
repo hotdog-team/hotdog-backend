@@ -1,9 +1,12 @@
 package com.dto.project.domain.auth.service;
 
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.entity.MemberRole;
+import com.dto.project.domain.member.entity.MemberStatus;
 import com.dto.project.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -14,12 +17,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final MemberRepository memberRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -57,8 +62,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .orElse(Member.builder()
                         .email(email)
                         .name(name)
-                        .role("USER")
-                        .status("ACTIVE")
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .role(MemberRole.ROLE_USER)
+                        .status(MemberStatus.ACTIVE)
                         .build());
 
         memberRepository.save(member);
