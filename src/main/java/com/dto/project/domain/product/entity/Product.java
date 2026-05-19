@@ -44,7 +44,7 @@ public class Product {
     @Lob
     @Column(name = "spec_info")
     private String specInfo;
-
+    
     @Column(name = "alt_text")
     private String altText;
 

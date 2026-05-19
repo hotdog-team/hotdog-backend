@@ -5,6 +5,8 @@ import com.dto.project.domain.auth.dto.LoginRequest;
 import com.dto.project.domain.auth.jwt.JwtProvider;
 import com.dto.project.domain.member.dto.SignupRequest;
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.entity.MemberRole;
+import com.dto.project.domain.member.entity.MemberStatus;
 import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.member.repository.MemberTagWeightRepository;
@@ -18,6 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -45,25 +51,44 @@ public class AuthService {
                     .name(request.getName())
                     .ageRange(request.getAgeRange())
                     .jobType(request.getJobType())
-                    .lifestyleTag(request.getLifestyleTag())
+                    .purposeId(request.getPurposeId()) // 핵심 프로필 정보로 저장
                     .isJobRecommendEnabled(request.isJobRecommendEnabled())
-                    .role("USER")
-                    .status("ACTIVE")
+                    .role(MemberRole.ROLE_USER)
+                    .status(MemberStatus.ACTIVE)
                     .build());
 
-            if (request.getLifestyleTagIds() != null && !request.getLifestyleTagIds().isEmpty()) {
-                for (Long tagId : request.getLifestyleTagIds()) {
-                    metaTagRepository.findById(tagId).ifPresent(metaTagEntity -> {
-                        memberTagWeightRepository.save(MemberTagWeight.builder()
-                                .member(member)
-                                .metaTag(metaTagEntity)
-                                .weightScore(20)
-                                .build());
-                    });
-                }
+            List<MemberTagWeight> weightsToSave = new ArrayList<>();
+            Set<Long> allTagIds = new HashSet<>();
+
+            // '이용 목적' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
+            if (request.getPurposeId() != null) {
+                allTagIds.add(request.getPurposeId());
             }
+
+            // 다중 선택된 나머지 '취향 정보' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
+            if (request.getSelectedTagIds() != null && !request.getSelectedTagIds().isEmpty()) {
+                allTagIds.addAll(request.getSelectedTagIds());
+            }
+
+            // 취합된 태그들을 순회하며 영속성 객체 생성
+            for (Long tagId : allTagIds) {
+                metaTagRepository.findById(tagId).ifPresent(metaTagEntity -> {
+                    weightsToSave.add(MemberTagWeight.builder()
+                            .member(member)
+                            .metaTag(metaTagEntity)
+                            .weightScore(20)
+                            .build());
+                });
+            }
+
+            // DB 부하를 줄이고 트랜잭션 안전성을 위해 saveAll로 일괄 저장
+            if (!weightsToSave.isEmpty()) {
+                memberTagWeightRepository.saveAll(weightsToSave);
+            }
+
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "회원가입 처리 중 오류가 발생했습니다.");
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "회원가입 처리 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -74,7 +99,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, DefaultErrorDetailMessages.LOGIN_FAILED));
 
         // 계정 상태 방어 로직 (탈퇴/정지 유저 차단)
-        if (!"ACTIVE".equals(member.getStatus())) {
+        if (member.getStatus() != MemberStatus.ACTIVE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, DefaultErrorDetailMessages.NO_PERMISSION);
         }
 
@@ -82,7 +107,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_FAILED);
         }
 
-        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // Redis에 Refresh Token 저장 (7일 유지)
@@ -128,17 +153,23 @@ public class AuthService {
         }
 
         // 4. 계정 상태 한 번 더 검증
-        if (!"ACTIVE".equals(member.getStatus())) {
+        if (member.getStatus() != MemberStatus.ACTIVE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, DefaultErrorDetailMessages.NO_PERMISSION);
         }
 
         // 5. 모든 검증 통과 시 새로운 토큰 세트 발급
-        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
         String newRefreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // 6. Redis 정보 업데이트
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), newRefreshToken, 7, TimeUnit.DAYS);
 
         return new AuthResponse(newAccessToken, newRefreshToken);
+    }
+
+    // 5. [관리자용] 특정 유저 강제 로그아웃
+    @Transactional
+    public void forceLogout(String email) {
+        redisTemplate.delete("RT:" + email);
     }
 }
