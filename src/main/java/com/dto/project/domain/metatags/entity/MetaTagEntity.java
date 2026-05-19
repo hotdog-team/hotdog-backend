@@ -1,6 +1,6 @@
 package com.dto.project.domain.metatags.entity;
 
-import com.dto.project.domain.metatags.dto.MetaTagDTO;
+import com.dto.project.domain.metatags.dto.MetaTagRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,22 +15,23 @@ import java.time.LocalDateTime;
 @Table(name="meta_tags")
 public class MetaTagEntity {
     @Id
-    private int id;
+    @GeneratedValue
+    private Long id;
     private String name;
     @Enumerated(EnumType.STRING)
     private MetaTagType type;
     @Enumerated(EnumType.STRING)
-    private MetaTagStatus status;
+    private MetaTagStatus metaTagStatus;
+    @Column(name="created_at")
+    private LocalDateTime createdAt;
     @Column(name="updated_at")
     private LocalDateTime updatedAt;
 
-    public static MetaTagEntity toEntity(MetaTagDTO dto){
+    public static MetaTagEntity toEntity(MetaTagRequest request){
         return MetaTagEntity.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .type(dto.getType())
-                .status(dto.getStatus())
-                .updatedAt(dto.getUpdatedAt())
+                .name(request.getName())
+                .type(request.getType())
+                .metaTagStatus(request.getMetaTagStatus())
                 .build();
     }
 }

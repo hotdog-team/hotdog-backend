@@ -1,15 +1,29 @@
 package com.dto.project.domain.auth.service;
 
-import com.dto.project.domain.auth.dto.*;
+import com.dto.project.domain.auth.dto.AuthResponse;
+import com.dto.project.domain.auth.dto.LoginRequest;
 import com.dto.project.domain.auth.jwt.JwtProvider;
+import com.dto.project.domain.member.dto.SignupRequest;
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.entity.MemberRole;
+import com.dto.project.domain.member.entity.MemberStatus;
+import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.domain.member.repository.MemberTagWeightRepository;
+import com.dto.project.domain.metatags.repository.MetaTagRepository;
+import com.dto.project.global.exception.DefaultErrorDetailMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -17,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 public class AuthService {
 
     private final MemberRepository memberRepository;
+    private final MemberTagWeightRepository memberTagWeightRepository;
+    private final MetaTagRepository metaTagRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final StringRedisTemplate redisTemplate;
@@ -25,37 +41,73 @@ public class AuthService {
     @Transactional
     public void signup(SignupRequest request) {
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, DefaultErrorDetailMessages.DUPLICATED_VALUES);
         }
 
-        memberRepository.save(Member.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
-                .ageRange(request.getAgeRange())
-                .jobType(request.getJobType())
-                .lifestyleTag(request.getLifestyleTag())
-                .role("USER")
-                .status("ACTIVE")
-                .build());
+        try {
+            Member member = memberRepository.save(Member.builder()
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .name(request.getName())
+                    .ageRange(request.getAgeRange())
+                    .jobType(request.getJobType())
+                    .purposeId(request.getPurposeId()) // 핵심 프로필 정보로 저장
+                    .isJobRecommendEnabled(request.isJobRecommendEnabled())
+                    .role(MemberRole.ROLE_USER)
+                    .status(MemberStatus.ACTIVE)
+                    .build());
+
+            List<MemberTagWeight> weightsToSave = new ArrayList<>();
+            Set<Long> allTagIds = new HashSet<>();
+
+            // '이용 목적' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
+            if (request.getPurposeId() != null) {
+                allTagIds.add(request.getPurposeId());
+            }
+
+            // 다중 선택된 나머지 '취향 정보' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
+            if (request.getSelectedTagIds() != null && !request.getSelectedTagIds().isEmpty()) {
+                allTagIds.addAll(request.getSelectedTagIds());
+            }
+
+            // 취합된 태그들을 순회하며 영속성 객체 생성
+            for (Long tagId : allTagIds) {
+                metaTagRepository.findById(tagId).ifPresent(metaTagEntity -> {
+                    weightsToSave.add(MemberTagWeight.builder()
+                            .member(member)
+                            .metaTag(metaTagEntity)
+                            .weightScore(20)
+                            .build());
+                });
+            }
+
+            // DB 부하를 줄이고 트랜잭션 안전성을 위해 saveAll로 일괄 저장
+            if (!weightsToSave.isEmpty()) {
+                memberTagWeightRepository.saveAll(weightsToSave);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "회원가입 처리 중 오류가 발생했습니다.", e);
+        }
     }
 
-    // 2. 로그인 (상태 검증 로직 추가)
+    // 2. 로그인
     @Transactional
     public AuthResponse login(LoginRequest request) {
         Member member = memberRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, DefaultErrorDetailMessages.LOGIN_FAILED));
 
         // 계정 상태 방어 로직 (탈퇴/정지 유저 차단)
-        if (!"ACTIVE".equals(member.getStatus())) {
-            throw new IllegalArgumentException("정지되거나 탈퇴한 계정입니다.");
+        if (member.getStatus() != MemberStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, DefaultErrorDetailMessages.NO_PERMISSION);
         }
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_FAILED);
         }
 
-        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // Redis에 Refresh Token 저장 (7일 유지)
@@ -67,14 +119,18 @@ public class AuthService {
     // 3. 로그아웃
     @Transactional
     public void logout(String accessToken) {
-        String email = jwtProvider.getEmail(accessToken);
+        try {
+            String email = jwtProvider.getEmail(accessToken);
 
-        // Redis에서 Refresh Token 삭제
-        redisTemplate.delete("RT:" + email);
+            // Redis에서 Refresh Token 삭제
+            redisTemplate.delete("RT:" + email);
 
-        // Access Token 남은 시간 계산 후 블랙리스트에 올림
-        Long expiration = jwtProvider.getExpiration(accessToken);
-        redisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+            // Access Token 남은 시간 계산 후 블랙리스트에 올림
+            Long expiration = jwtProvider.getExpiration(accessToken);
+            redisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "로그아웃 처리 중 오류가 발생했습니다.");
+        }
     }
 
     // 4. 토큰 재발급
@@ -82,32 +138,38 @@ public class AuthService {
     public AuthResponse reissue(String refreshToken) {
         // 1. 들어온 Refresh Token이 유효한지 검증
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token 입니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token 입니다.");
         }
 
         // 2. 토큰에서 이메일 추출 후 유저 조회
         String email = jwtProvider.getEmail(refreshToken);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, DefaultErrorDetailMessages.NOT_FOUND));
 
         // 3. Redis에 저장된 진짜 Refresh Token과 비교
         String redisRefreshToken = redisTemplate.opsForValue().get("RT:" + email);
         if (redisRefreshToken == null || !redisRefreshToken.equals(refreshToken)) {
-            throw new IllegalArgumentException("로그아웃 되었거나 일치하지 않는 토큰입니다. 다시 로그인해주세요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그아웃 되었거나 일치하지 않는 토큰입니다. 다시 로그인해주세요.");
         }
 
         // 4. 계정 상태 한 번 더 검증
-        if (!"ACTIVE".equals(member.getStatus())) {
-            throw new IllegalArgumentException("정지되거나 탈퇴한 계정입니다.");
+        if (member.getStatus() != MemberStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, DefaultErrorDetailMessages.NO_PERMISSION);
         }
 
         // 5. 모든 검증 통과 시 새로운 토큰 세트 발급
-        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole());
+        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
         String newRefreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // 6. Redis 정보 업데이트
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), newRefreshToken, 7, TimeUnit.DAYS);
 
         return new AuthResponse(newAccessToken, newRefreshToken);
+    }
+
+    // 5. [관리자용] 특정 유저 강제 로그아웃
+    @Transactional
+    public void forceLogout(String email) {
+        redisTemplate.delete("RT:" + email);
     }
 }
