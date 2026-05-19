@@ -45,7 +45,6 @@ public class Product {
     @Column(name = "spec_info")
     private String specInfo;
     
-    @Lob
     @Column(name = "alt_text")
     private String altText;
 
