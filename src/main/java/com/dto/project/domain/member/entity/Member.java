@@ -92,4 +92,20 @@ public class Member {
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }
+
+    public void changeRoleAndStatus(String role, String status) {
+        try {
+            if (role != null && !role.isBlank()) {
+                this.role = MemberRole.valueOf(role.toUpperCase());
+            }
+            if (status != null && !status.isBlank()) {
+                this.status = MemberStatus.valueOf(status.toUpperCase());
+            }
+            this.updatedAt = LocalDateTime.now();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 권한 또는 상태 값입니다.");
+        }
+    }
 }
+
+

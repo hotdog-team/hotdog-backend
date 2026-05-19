@@ -166,4 +166,10 @@ public class AuthService {
 
         return new AuthResponse(newAccessToken, newRefreshToken);
     }
+
+    // 5. [관리자용] 특정 유저 강제 로그아웃
+    @Transactional
+    public void forceLogout(String email) {
+        redisTemplate.delete("RT:" + email);
+    }
 }
