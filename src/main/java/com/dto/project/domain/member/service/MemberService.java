@@ -107,7 +107,7 @@ public class MemberService {
                 .jobType(member.getJobType())
                 .ageRange(member.getAgeRange())
                 .purposeId(member.getPurposeId())
-                .isJobRecommendEnabled(member.isJobRecommendEnabled()) // 💡 boolean은 is로!
+                .isJobRecommendEnabled(member.isJobRecommendEnabled())
                 .zipCode(address != null ? address.getZipCode() : null)
                 .baseAddress(address != null ? address.getBaseAddress() : null)
                 .detailAddress(address != null ? address.getDetailAddress() : null)
