@@ -1,11 +1,12 @@
 package com.dto.project.domain.member.controller;
 
+import com.dto.project.domain.member.dto.MemberResponse;
 import com.dto.project.domain.member.dto.MemberUpdateRequest;
 import com.dto.project.domain.member.service.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 @RestController
@@ -20,6 +21,12 @@ public class MemberController {
     public ResponseEntity<Void> updateProfile(@RequestBody MemberUpdateRequest request, Principal principal) {
         memberService.updateProfile(principal.getName(), request);
         return ResponseEntity.ok().build();
+    }
+
+    // 내 정보 조회 API
+    @GetMapping("/me")
+    public ResponseEntity<MemberResponse> getMyProfile(Principal principal) {
+        return ResponseEntity.ok(memberService.getProfile(principal.getName()));
     }
 
     // 회원 탈퇴 API
