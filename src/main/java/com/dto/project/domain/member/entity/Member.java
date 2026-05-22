@@ -28,13 +28,15 @@ public class Member {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(length = 50)
+    private String phone;
+
     @Column(name = "age_range", length = 50)
     private String ageRange;
 
     @Column(name = "job_type", length = 100)
     private String jobType;
 
-    // 💡 기획 의도에 따라 lifestyleTag 제거
     // 향후 MetaTag 엔티티와 별도 매핑 테이블을 통해 8가지 분류(Category, Seasonal, Purpose 등) 관리 예정
     @Column(name = "purpose_id")
     private Long purposeId;
@@ -68,8 +70,9 @@ public class Member {
     /**
      * 회원 프로필 수정
      */
-    public void updateProfile(String name, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
+    public void updateProfile(String name, String phone, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
         if (name != null) this.name = name;
+        if (phone != null) this.phone = phone;
         if (jobType != null) this.jobType = jobType;
         if (purposeId != null) this.purposeId = purposeId;
         if (isJobRecommendEnabled != null) this.isJobRecommendEnabled = isJobRecommendEnabled;

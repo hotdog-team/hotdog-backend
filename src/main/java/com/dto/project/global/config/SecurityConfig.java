@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 전용
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/api/members/me").permitAll()
                         .anyRequest().authenticated()
                 )
 

@@ -1,5 +1,8 @@
 package com.dto.project.domain.member.service;
 
+import com.dto.project.domain.address.entity.Address;
+import com.dto.project.domain.address.repository.AddressRepository;
+import com.dto.project.domain.member.dto.MemberResponse;
 import com.dto.project.domain.member.dto.MemberUpdateRequest;
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.entity.MemberTagWeight;
@@ -25,14 +28,27 @@ public class MemberService {
     private final MetaTagRepository metaTagRepository;
     private final StringRedisTemplate redisTemplate;
 
+    private final AddressRepository addressRepository;
+
     // 1. 회원 정보 및 취향 설정 변경
     @Transactional
     public void updateProfile(String email, MemberUpdateRequest request) {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
-        // 기본 인적사항 및 핵심 목적 ID 업데이트
-        member.updateProfile(request.getName(), request.getJobType(), request.getPurposeId(), request.getIsJobRecommendEnabled());
+        // 기본 인적사항(연락처 phone 추가됨) 및 핵심 목적 ID 업데이트
+        member.updateProfile(request.getName(), request.getPhone(), request.getJobType(), request.getPurposeId(), request.getIsJobRecommendEnabled());
+
+        if (request.getZipCode() != null || request.getBaseAddress() != null || request.getDetailAddress() != null) {
+            Address address = addressRepository.findByMemberIdAndIsDefaultTrue(member.getId())
+                    .orElse(Address.builder()
+                            .member(member)
+                            .isDefault(true)
+                            .build());
+
+            address.updateAddress(request.getZipCode(), request.getBaseAddress(), request.getDetailAddress());
+            addressRepository.save(address);
+        }
 
         // 이용 목적 가중치 정보 동기화
         if (request.getPurposeId() != null) {
@@ -71,5 +87,30 @@ public class MemberService {
             // 기존 발급된 인증 토큰은 만료 전까지 재사용 불가능하도록 블랙리스트 등록 (유효시간 2시간 설정)
             redisTemplate.opsForValue().set(accessToken, "withdrawn", 2, TimeUnit.HOURS);
         }
+    }
+
+    // 3. 회원 정보 조회 (프로필 페이지용)
+    @Transactional(readOnly = true)
+    public MemberResponse getProfile(String email) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+
+        // 주소 조회
+        Address address = addressRepository.findByMemberIdAndIsDefaultTrue(member.getId())
+                .orElse(null);
+
+        // MemberResponse DTO에 매핑
+        return MemberResponse.builder()
+                .email(member.getEmail())
+                .name(member.getName())
+                .phone(member.getPhone())
+                .jobType(member.getJobType())
+                .ageRange(member.getAgeRange())
+                .purposeId(member.getPurposeId())
+                .isJobRecommendEnabled(member.isJobRecommendEnabled()) // 💡 boolean은 is로!
+                .zipCode(address != null ? address.getZipCode() : null)
+                .baseAddress(address != null ? address.getBaseAddress() : null)
+                .detailAddress(address != null ? address.getDetailAddress() : null)
+                .build();
     }
 }
