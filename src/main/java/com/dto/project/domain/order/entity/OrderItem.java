@@ -20,10 +20,33 @@ public class OrderItem {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    // 상품 출처 구분 (필수)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductSource source;
+
+    // 1. 사내 상품일 경우 (NAVER 상품일 땐 null 허용)
     // N:1 관계 - 어떤 상품을 샀는지
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = true)
     private Product product;
+
+    // 2. 네이버 상품일 경우 (스냅샷 저장 영역)
+    @Column(name = "naver_product_id")
+    private String naverProductId;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "description")
+    private String description;
+
 
     @Column(nullable = false)
     private int quantity; // 주문 수량

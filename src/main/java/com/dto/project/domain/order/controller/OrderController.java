@@ -1,6 +1,7 @@
 package com.dto.project.domain.order.controller;
 
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.dto.OrderResponse;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.service.OrderService;
@@ -39,4 +40,15 @@ public class OrderController {
         orderService.cancelOrder(orderId);
         return ResponseEntity.ok().build();
     }
+
+    //프론트엔드에서 결제/주문 요청을 받는 엔드포인트
+    @PostMapping
+    public ResponseEntity<Long> createOrder(
+            @AuthenticationPrincipal Member member,
+            @RequestBody OrderRequest request) {
+
+        Long orderId = orderService.createOrder(request, member);
+        return ResponseEntity.ok(orderId);
+    }
+
 }
