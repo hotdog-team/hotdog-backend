@@ -5,6 +5,7 @@ import com.dto.project.domain.cart.dto.CartResponse;
 import com.dto.project.domain.cart.dto.CartUpdateRequest;
 import com.dto.project.domain.cart.entity.Cart;
 import com.dto.project.domain.cart.repository.CartRepository;
+import com.dto.project.domain.order.entity.ProductSource;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,8 @@ public class CartService {
             return;
         }
 
-        Cart newCart = new Cart(memberId, product, request.getQuantity());
+        Cart newCart = new Cart(memberId, ProductSource.INTERNAL, product, null, product.getName(),
+        						null, product.getPrice(), request.getQuantity());
         cartRepository.save(newCart);
     }
 
