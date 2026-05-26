@@ -4,6 +4,7 @@ import com.dto.project.domain.address.entity.Address;
 import com.dto.project.domain.address.repository.AddressRepository;
 import com.dto.project.domain.member.dto.MemberResponse;
 import com.dto.project.domain.member.dto.MemberUpdateRequest;
+import com.dto.project.domain.member.dto.PasswordUpdateRequest;
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
@@ -13,6 +14,7 @@ import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,8 +29,10 @@ public class MemberService {
     private final MemberTagWeightRepository memberTagWeightRepository;
     private final MetaTagRepository metaTagRepository;
     private final StringRedisTemplate redisTemplate;
-
     private final AddressRepository addressRepository;
+
+    // 비밀번호 검증 및 암호화를 위한 인코더 주입
+    private final PasswordEncoder passwordEncoder;
 
     // 1. 회원 정보 및 취향 설정 변경
     @Transactional
@@ -112,5 +116,20 @@ public class MemberService {
                 .baseAddress(address != null ? address.getBaseAddress() : null)
                 .detailAddress(address != null ? address.getDetailAddress() : null)
                 .build();
+    }
+
+    // 4. 비밀번호 변경 로직
+    @Transactional
+    public void updatePassword(String email, PasswordUpdateRequest request) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+
+        // 현재 비밀번호가 맞는지 검증
+        if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호 암호화 후 업데이트
+        member.updatePassword(passwordEncoder.encode(request.getNewPassword()));
     }
 }

@@ -2,11 +2,13 @@ package com.dto.project.domain.member.controller;
 
 import com.dto.project.domain.member.dto.MemberResponse;
 import com.dto.project.domain.member.dto.MemberUpdateRequest;
+import com.dto.project.domain.member.dto.PasswordUpdateRequest;
 import com.dto.project.domain.member.service.MemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.security.Principal;
 
 @RestController
@@ -38,4 +40,12 @@ public class MemberController {
         memberService.withdraw(principal.getName(), accessToken);
         return ResponseEntity.ok().build();
     }
+
+    // 비밀번호 변경 API
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(@RequestBody PasswordUpdateRequest request, Principal principal) {
+        memberService.updatePassword(principal.getName(), request);
+        return ResponseEntity.ok().build();
+    }
+
 }
