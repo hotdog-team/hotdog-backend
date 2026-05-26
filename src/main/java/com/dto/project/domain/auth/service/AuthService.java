@@ -52,7 +52,7 @@ public class AuthService {
                     .ageRange(request.getAgeRange())
                     .jobType(request.getJobType())
                     .purposeId(request.getPurposeId()) // 핵심 프로필 정보로 저장
-                    .isJobRecommendEnabled(request.isJobRecommendEnabled())
+                    .isJobRecommendEnabled(request.getIsJobRecommendEnabled())
                     .role(MemberRole.ROLE_USER)
                     .status(MemberStatus.ACTIVE)
                     .build());
@@ -113,7 +113,7 @@ public class AuthService {
         // Redis에 Refresh Token 저장 (7일 유지)
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), refreshToken, 7, TimeUnit.DAYS);
 
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(accessToken, refreshToken, member.getEmail(), member.getName());
     }
 
     // 3. 로그아웃
@@ -164,7 +164,7 @@ public class AuthService {
         // 6. Redis 정보 업데이트
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), newRefreshToken, 7, TimeUnit.DAYS);
 
-        return new AuthResponse(newAccessToken, newRefreshToken);
+        return new AuthResponse(newAccessToken, newRefreshToken, member.getEmail(), member.getName());
     }
 
     // 5. [관리자용] 특정 유저 강제 로그아웃

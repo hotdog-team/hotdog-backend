@@ -25,6 +25,7 @@ public class SignupRequest {
     @NotBlank(message = "이름은 필수 입력값입니다.")
     private String name;
 
+    private String phone;
     // 2. 인적사항 및 취향 정보
     private String ageRange;      // 연령대
     private String jobType;       // 직종
@@ -35,5 +36,5 @@ public class SignupRequest {
 
     // 가입 시 동의 여부
     @JsonProperty("isJobRecommendEnabled")
-    private boolean isJobRecommendEnabled;
+    private Boolean isJobRecommendEnabled = true;
 }
