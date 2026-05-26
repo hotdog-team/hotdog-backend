@@ -1,0 +1,105 @@
+package com.dto.project.domain.review.service;
+
+import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.domain.product.entity.Product;
+import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.review.dto.ReviewCreateRequest;
+import com.dto.project.domain.review.dto.ReviewResponse;
+import com.dto.project.domain.review.dto.ReviewUpdateRequest;
+import com.dto.project.domain.review.entity.Review;
+import com.dto.project.domain.review.repository.ReviewRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class ReviewService {
+
+    private final ReviewRepository reviewRepository;
+    private final MemberRepository memberRepository;
+    private final ProductRepository productRepository;
+
+    public void createReview(Long memberId, Long productId, ReviewCreateRequest request) {
+        validateReviewRequest(request.getRating(), request.getContent());
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+
+        if (reviewRepository.existsByMemberAndProduct(member, product)) {
+            throw new IllegalArgumentException("이미 해당 상품에 리뷰를 작성했습니다.");
+        }
+
+        Review review = Review.builder()
+                .member(member)
+                .product(product)
+                .rating(request.getRating())
+                .content(request.getContent())
+                .build();
+
+        reviewRepository.save(review);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getProductReviews(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+
+        return reviewRepository.findAllByProductOrderByCreatedAtDesc(product)
+                .stream()
+                .map(ReviewResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getMyReviews(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        return reviewRepository.findAllByMemberOrderByCreatedAtDesc(member)
+                .stream()
+                .map(ReviewResponse::from)
+                .toList();
+    }
+
+    public void updateReview(Long memberId, Long reviewId, ReviewUpdateRequest request) {
+        validateReviewRequest(request.getRating(), request.getContent());
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
+
+        if (!review.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인이 작성한 리뷰만 수정할 수 있습니다.");
+        }
+
+        review.update(request.getRating(), request.getContent());
+    }
+
+    public void deleteReview(Long memberId, Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
+
+        if (!review.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
+        }
+
+        reviewRepository.delete(review);
+    }
+
+    private void validateReviewRequest(Integer rating, String content) {
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("평점은 1점 이상 5점 이하로 입력해야 합니다.");
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("리뷰 내용을 입력해야 합니다.");
+        }
+    }
+}
