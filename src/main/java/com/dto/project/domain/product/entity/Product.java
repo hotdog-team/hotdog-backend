@@ -58,4 +58,12 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // 비즈니스 로직 (재고 차감)
+    public void decreaseStock(int quantity) {
+        if (this.stockQuantity < quantity) {
+            throw new IllegalArgumentException("재고가 부족합니다. (현재 재고: " + this.stockQuantity + "개)");
+        }
+        this.stockQuantity -= quantity;
+    }
 }
