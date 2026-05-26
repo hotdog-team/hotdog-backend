@@ -1,6 +1,7 @@
 package com.dto.project.domain.review.repository;
 
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.review.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByMemberAndProduct(Member member, Product product);
 
     boolean existsByMemberAndProduct(Member member, Product product);
+    
+    boolean existsByOrderItem(OrderItem orderItem);
+
+    List<Review> findAllByProductIdOrderByCreatedAtDesc(Long productId);
 }

@@ -2,8 +2,8 @@ package com.dto.project.domain.review.service;
 
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.repository.MemberRepository;
-import com.dto.project.domain.product.entity.Product;
-import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.order.entity.OrderItem;
+import com.dto.project.domain.order.repository.OrderItemRepository;
 import com.dto.project.domain.review.dto.ReviewCreateRequest;
 import com.dto.project.domain.review.dto.ReviewResponse;
 import com.dto.project.domain.review.dto.ReviewUpdateRequest;
@@ -22,26 +22,28 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final MemberRepository memberRepository;
-    private final ProductRepository productRepository;
+    private final OrderItemRepository orderItemRepository;
 
-    public void createReview(Long memberId, Long productId, ReviewCreateRequest request) {
+    public void createReview(Long memberId, Long orderItemId, ReviewCreateRequest request) {
         validateReviewRequest(request.getRating(), request.getContent());
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new IllegalArgumentException("주문 상품을 찾을 수 없습니다."));
 
-        if (reviewRepository.existsByMemberAndProduct(member, product)) {
-            throw new IllegalArgumentException("이미 해당 상품에 리뷰를 작성했습니다.");
+        if (reviewRepository.existsByOrderItem(orderItem)) {
+            throw new IllegalArgumentException("이미 해당 주문 상품에 리뷰를 작성했습니다.");
         }
 
         Review review = Review.builder()
                 .member(member)
-                .product(product)
+                .product(orderItem.getProduct())
+                .orderItem(orderItem)
                 .rating(request.getRating())
                 .content(request.getContent())
+                .imageUrl(request.getImageUrl())
                 .build();
 
         reviewRepository.save(review);
@@ -49,10 +51,7 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> getProductReviews(Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
-
-        return reviewRepository.findAllByProductOrderByCreatedAtDesc(product)
+        return reviewRepository.findAllByProductIdOrderByCreatedAtDesc(productId)
                 .stream()
                 .map(ReviewResponse::from)
                 .toList();
@@ -79,7 +78,11 @@ public class ReviewService {
             throw new IllegalArgumentException("본인이 작성한 리뷰만 수정할 수 있습니다.");
         }
 
-        review.update(request.getRating(), request.getContent());
+        review.update(
+                request.getRating(),
+                request.getContent(),
+                request.getImageUrl()
+        );
     }
 
     public void deleteReview(Long memberId, Long reviewId) {
