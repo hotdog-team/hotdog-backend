@@ -1,6 +1,5 @@
 package com.dto.project.domain.weighting.dto;
 
-import com.dto.project.domain.weighting.entity.WeightLogStatus;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +17,5 @@ public class MetaTagWeightLogRequest {
     private WeightLogType actionType;
     private Long referenceId;
     private LocalDateTime eventTimeStamp;
-    private WeightLogStatus status;
     private Long stayDuration;
 }

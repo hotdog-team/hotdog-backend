@@ -1,7 +1,6 @@
 package com.dto.project.domain.weighting.dto;
 
 import com.dto.project.domain.weighting.entity.ProductWeightLog;
-import com.dto.project.domain.weighting.entity.WeightLogStatus;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +17,6 @@ public class ProductWeightLogResponse {
     private Long referenceId;
     private LocalDateTime eventTimeStamp;
     private LocalDateTime createdAt;
-    private WeightLogStatus status;
 
     public static ProductWeightLogResponse from(ProductWeightLog entity){
         return ProductWeightLogResponse.builder()
@@ -30,7 +28,6 @@ public class ProductWeightLogResponse {
                 .referenceId(entity.getReferenceId())
                 .eventTimeStamp(entity.getEventTimeStamp())
                 .createdAt(entity.getCreatedAt())
-                .status(entity.getStatus())
                 .build();
 
     }

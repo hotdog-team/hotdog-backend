@@ -33,6 +33,4 @@ public class ProductWeightLog {
     private LocalDateTime eventTimeStamp;
     @Column(name="created_at")
     private LocalDateTime createdAt;
-    @Enumerated(EnumType.STRING)
-    private WeightLogStatus status;
 }

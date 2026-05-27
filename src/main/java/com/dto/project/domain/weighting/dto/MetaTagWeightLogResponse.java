@@ -1,7 +1,6 @@
 package com.dto.project.domain.weighting.dto;
 
 import com.dto.project.domain.weighting.entity.MetaTagWeightLog;
-import com.dto.project.domain.weighting.entity.WeightLogStatus;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +18,6 @@ public class MetaTagWeightLogResponse {
     private Long referenceId;
     private LocalDateTime eventTimeStamp;
     private LocalDateTime createdAt;
-    private WeightLogStatus status;
 
     public static MetaTagWeightLogResponse from(MetaTagWeightLog entity){
         return MetaTagWeightLogResponse.builder()
@@ -31,7 +29,6 @@ public class MetaTagWeightLogResponse {
                 .referenceId(entity.getReferenceId())
                 .eventTimeStamp(entity.getEventTimeStamp())
                 .createdAt(entity.getCreatedAt())
-                .status(entity.getStatus())
                 .build();
     }
 }

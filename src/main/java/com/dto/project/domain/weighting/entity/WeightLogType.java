@@ -4,6 +4,8 @@ public enum WeightLogType {
     VIEW,
     CART,
     BOOKMARK,
-    PURCHASE,
-    CANCEL
+    BUY,
+    CANCEL_BUY,
+    CANCEL_BOOKMARK,
+    CANCEL_CART
 }
