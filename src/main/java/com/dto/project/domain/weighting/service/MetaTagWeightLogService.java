@@ -2,10 +2,8 @@ package com.dto.project.domain.weighting.service;
 
 import com.dto.project.domain.metatags.entity.MetaTagProduct;
 import com.dto.project.domain.metatags.repository.MetaTagProductRepository;
-import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import com.dto.project.domain.weighting.entity.MetaTagWeightLog;
-import com.dto.project.domain.weighting.entity.WeightLogStatus;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import com.dto.project.domain.weighting.repository.MetaTagWeightLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +43,6 @@ public class MetaTagWeightLogService {
                         .referenceId(referenceId)
                         .eventTimeStamp(now)
                         .createdAt(now)
-                        .status(WeightLogStatus.ACTIVE)
                         .build())
                 .toList();
 
