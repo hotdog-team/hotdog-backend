@@ -66,4 +66,34 @@ public class Product {
         }
         this.stockQuantity -= quantity;
     }
+
+    // 상태 변경
+    public void changeStatus(String status) {
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+
+    public void updateProductInfo(
+            Long categoryId, String name, Integer price, Integer deliveryFee,
+            Integer stockQuantity, String shortDescription, String description,
+            String brand, String origin, String specInfo, String altText) {
+        this.categoryId = categoryId;
+        this.name = name;
+        this.price = price;
+        this.deliveryFee = deliveryFee;
+        this.stockQuantity = stockQuantity;
+        this.shortDescription = shortDescription;
+        this.description = description;
+        this.brand = brand;
+        this.origin = origin;
+        this.specInfo = specInfo;
+        this.altText = altText;
+        this.updatedAt = LocalDateTime.now();
+
+        if (this.status == null) {
+            this.status = "ON_SALE";
+        }
+
+    }
 }

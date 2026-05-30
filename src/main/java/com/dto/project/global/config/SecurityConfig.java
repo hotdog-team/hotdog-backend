@@ -46,7 +46,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh").permitAll() // 누구나 접근 가능
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 전용
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN") // 관리자 전용
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/members/me").permitAll()

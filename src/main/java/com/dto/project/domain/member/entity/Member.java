@@ -42,7 +42,7 @@ public class Member {
     private Long purposeId;
 
     @Builder.Default
-    @Column(name = "is_job_recommend_enabled", nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean isJobRecommendEnabled = true;
 
     @Builder.Default
