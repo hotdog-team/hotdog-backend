@@ -74,4 +74,10 @@ public class Review {
         this.imageUrl = imageUrl;
         this.updatedAt = LocalDateTime.now();
     }
+
+    // 리뷰 상태 변경 (소프트 딜리트 및 숨김 처리용)
+    public void changeStatus(String status) {
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

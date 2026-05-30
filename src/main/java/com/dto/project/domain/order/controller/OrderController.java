@@ -1,13 +1,13 @@
 package com.dto.project.domain.order.controller;
 
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.dto.OrderResponse;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +19,16 @@ import java.util.stream.Collectors;
 public class OrderController {
 
     private final OrderService orderService;
+    private final MemberRepository memberRepository;
 
     //구매 내역 조회
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getMyOrders(
-            @AuthenticationPrincipal Member member) {
+            @RequestParam Long memberId) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
         List<Order> orders = orderService.getOrderHistory(member);
         return ResponseEntity.ok(orders.stream().map(OrderResponse::new).collect(Collectors.toList()));
     }
@@ -44,11 +49,13 @@ public class OrderController {
     //프론트엔드에서 결제/주문 요청을 받는 엔드포인트
     @PostMapping
     public ResponseEntity<Long> createOrder(
-            @AuthenticationPrincipal Member member,
+            @RequestParam Long memberId,
             @RequestBody OrderRequest request) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
         Long orderId = orderService.createOrder(request, member);
         return ResponseEntity.ok(orderId);
     }
-
 }
