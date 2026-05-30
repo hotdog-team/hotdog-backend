@@ -19,17 +19,25 @@ public class ActionLogFlushScheduler {
     //매일 새벽 2시에 일괄 등록(batch)하도록 처리(팀내 policy에 의거)
     @Scheduled(cron = "0 0 2 * * *")
     public void behaviorFlush() {
-        int totalCase = 0;
+        int totalBehavior = 0;
 
-        while(true) {
+        while (true) {
             int queue = productWeightLogService.persistBehaviorLogsFromQueue(MAX_PER_RUN);
-            //queue가 비면 종료
             if (queue == 0) break;
 
-            totalCase += queue;
+            totalBehavior += queue;
         }
 
-        log.info("등록 완료: 총 {}건", totalCase);
+        int totalCart = 0;
+
+        while (true) {
+            int batch = productWeightLogService.persistCartPendingFromHash(MAX_PER_RUN);
+            if (batch == 0) break;
+
+            totalCart += batch;
+        }
+
+        log.info("behavior 등록 완료: 총 {}건, cart pending 등록 완료: 총 {}건", totalBehavior, totalCart);
     }
 
     //1분 후 bookmark 등록

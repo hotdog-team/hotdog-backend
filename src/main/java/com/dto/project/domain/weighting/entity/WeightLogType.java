@@ -7,5 +7,6 @@ public enum WeightLogType {
     BUY,
     CANCEL_BUY,
     CANCEL_BOOKMARK,
-    CANCEL_CART
+    CANCEL_CART,
+    DISLIKE
 }

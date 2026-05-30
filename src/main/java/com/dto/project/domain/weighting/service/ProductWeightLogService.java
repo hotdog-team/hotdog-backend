@@ -25,6 +25,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -34,6 +36,7 @@ import java.util.Set;
 public class ProductWeightLogService {
 
     public static final String BEHAVIOR_QUEUE_KEY = "behavior:queue";
+    public static final String CART_PENDING_KEY = "cart:pending";
 
     private final ProductWeightLogRepository productWeightLogRepository;
     private final MemberRepository memberRepository;
@@ -45,6 +48,8 @@ public class ProductWeightLogService {
     private final ObjectMapper objectMapper;
 
     //기록 - request 전체 받아 분할함
+    //TODO: 조회 및 구매에 있어서 재행동할 경우 +@
+    //TODO: 다수 구매/취소 처리 관련
     @Transactional
     public void recordLogs(ProductWeightLogRequest request) {
         Long memberId = resolveMemberId();
@@ -56,11 +61,13 @@ public class ProductWeightLogService {
 
 
         WeightLogType action = request.getActionType();
+
+
         if (action == null) {
             return;
         }
 
-        //VIEW: 24시간 기준으로 redis 기존 key 확인, 있다면 돌려보낸다.
+        //VIEW: 30분 기준으로 redis 기존 key 확인, 있다면 돌려보낸다.
         if (action == WeightLogType.VIEW) {
             String redisKey = "view:dedup:%d:%d".formatted(memberId, productId);
             Boolean isFirst = redisTemplate.opsForValue()
@@ -75,18 +82,34 @@ public class ProductWeightLogService {
             return;
         }
 
+        //북마크
         if (action == WeightLogType.BOOKMARK){
            //ZADD - 북마크 추가
             redisTemplate.opsForZSet().add("bookmark:pending", memberId + ":" + productId, System.currentTimeMillis());
             return;
         }
 
+        //북마크 취소 처리
         if(action == WeightLogType.CANCEL_BOOKMARK) {
             //ZADD 취소 처리(확정 전)
             redisTemplate.opsForZSet().remove("bookmark:pending", memberId + ":" + productId);
-
-            //확정 후는 이쪽으로 처리
+            //queue 제거 및 DB cancel은 cancelBookmark에서 처리(BUY 이력 있으면 skip)
             cancelBookmark(memberId, productId);
+            return;
+        }
+
+        if(action == WeightLogType.CANCEL_CART) {
+            //HDEL
+            redisTemplate.opsForHash().delete(CART_PENDING_KEY, memberId + ":" + productId);
+            //DB 확정 후는 이쪽으로 처리
+            cancelLog(memberId, productId, WeightLogType.CART, WeightLogType.CANCEL_CART);
+            return;
+        }
+
+        //결제 취소/환불 처리
+        if(action == WeightLogType.CANCEL_BUY) {
+            //여러차례의 과정이 필요하고, 가장 빈도가 낮기 때문에 Redis 적재 필요하지 않음
+            cancelLog(memberId, productId, WeightLogType.BUY, WeightLogType.CANCEL_BUY);
             return;
         }
 
@@ -103,6 +126,12 @@ public class ProductWeightLogService {
                 .createdAt(now)
                 .build();
 
+        //구매 처리
+        if (action == WeightLogType.BUY) {
+            persistProductLogIfNotDuplicate(log);
+            return;
+        }
+
         //try-catch문을 이쪽에서 실행시킵니다
         //json처리
         String json;
@@ -111,10 +140,12 @@ public class ProductWeightLogService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("로그 등록에 문제가 생겼습니다.", e);
         }
-        redisTemplate.opsForList().leftPush(BEHAVIOR_QUEUE_KEY, json);
 
-        //metaTagWeightLog에 정보를 인자로 넘김
-        metaTagWeightLogService.recordFromProduct(memberId, productId, action, request.getReferenceId());
+        if(action == WeightLogType.CART) {
+            redisTemplate.opsForHash().put(CART_PENDING_KEY, memberId + ":" + productId, json);
+            return;
+        }
+        redisTemplate.opsForList().leftPush(BEHAVIOR_QUEUE_KEY, json);
     }
 
     //메서드 분리로 안정성 강화
@@ -128,12 +159,7 @@ public class ProductWeightLogService {
 
             try {
                 ProductWeightLog log = objectMapper.readValue(json, ProductWeightLog.class);
-                productWeightLogRepository.save(log);
-                metaTagWeightLogService.recordFromProduct(
-                        log.getMemberId(),
-                        log.getProductId(),
-                        log.getActionType(),
-                        log.getReferenceId());
+                persistProductLogIfNotDuplicate(log);
                 count++;
             } catch (JsonProcessingException e) {
                 //실패 시 다음으로 넘어간다
@@ -144,10 +170,35 @@ public class ProductWeightLogService {
         return count;
     }
 
+    //CART 처리 관련
+    @Transactional
+    public int persistCartPendingFromHash(int max) {
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(CART_PENDING_KEY);
+        if (entries.isEmpty()) return 0;
+
+        int count = 0;
+        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+            if (count >= max) break;
+
+            String field = (String) entry.getKey();
+            String json = (String) entry.getValue();
+
+            try {
+                ProductWeightLog log = objectMapper.readValue(json, ProductWeightLog.class);
+                persistProductLogIfNotDuplicate(log);
+                redisTemplate.opsForHash().delete(CART_PENDING_KEY, field);
+                count++;
+            } catch (JsonProcessingException e) {
+                log.error("cart pending 배치 처리 실패: {}", json, e);
+            }
+        }
+        return count;
+    }
+
     //bookmark 1분 처리
     public void confirmBookmarkPending(){
-        Long now = System.currentTimeMillis();
-        Long cutoff = now - weightProps.getBookmark().getConfirmDelay().toMillis();
+        long now = System.currentTimeMillis();
+        long cutoff = now - weightProps.getBookmark().getConfirmDelay().toMillis();
         Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
                 .rangeByScoreWithScores("bookmark:pending", 0, cutoff);
         if(tuples == null || tuples.isEmpty()) return;
@@ -177,8 +228,6 @@ public class ProductWeightLogService {
                 throw new RuntimeException("로그 등록에 문제가 생겼습니다.", e);
             }
             redisTemplate.opsForList().leftPush(BEHAVIOR_QUEUE_KEY, json);
-
-            metaTagWeightLogService.recordFromProduct(memberId, productId, WeightLogType.BOOKMARK, null);
         }
 
         //ZSet 삭제
@@ -187,32 +236,97 @@ public class ProductWeightLogService {
     }
 
     public void cancelBookmark(Long memberId, Long productId){
-        // 결제 이력이 존재한다면 북마크에 의한 가중치 롤백 없음
+        // 결제 이력이 존재한다면 북마크 가중치 유지(queue 제거 및 DB cancel 모두 skip)
         if (productWeightLogRepository.existsByMemberIdAndProductIdAndActionType(
                 memberId, productId, WeightLogType.BUY)) {
             return;
         }
 
-        Optional<Long> bookmarkLogId = productWeightLogRepository
-                .findByMemberIdAndProductIdAndActionType(memberId, productId, WeightLogType.BOOKMARK);
+        removeBookmarkFromBehaviorQueue(memberId, productId);
+        cancelLog(memberId, productId, WeightLogType.BOOKMARK, WeightLogType.CANCEL_BOOKMARK);
+    }
 
-        //이력을 찾을 수 없을 경우 오류 처리하지 않고 조용히 무시한다
-        if (bookmarkLogId.isEmpty()) {
+    private void removeBookmarkFromBehaviorQueue(Long memberId, Long productId) {
+        List<String> entries = redisTemplate.opsForList().range(BEHAVIOR_QUEUE_KEY, 0, -1);
+        if (entries == null || entries.isEmpty()) {
             return;
         }
+
+        for (String json : entries) {
+            try {
+                ProductWeightLog queued = objectMapper.readValue(json, ProductWeightLog.class);
+                if (memberId.equals(queued.getMemberId())
+                        && productId.equals(queued.getProductId())
+                        && queued.getActionType() == WeightLogType.BOOKMARK) {
+                    redisTemplate.opsForList().remove(BEHAVIOR_QUEUE_KEY, 0, json);
+                }
+            } catch (JsonProcessingException e) {
+                log.warn("behavior queue 항목 파싱 실패: {}", json, e);
+            }
+        }
+    }
+
+    //CANCEL 로그 처리 일괄 메서드로 분리
+    private void cancelLog(
+            Long memberId,
+            Long productId,
+            WeightLogType referredAction,
+            WeightLogType cancelAction
+    ){
+        Optional<Long> referredId = productWeightLogRepository
+                .findLatestUncancelledId(memberId, productId, referredAction, cancelAction);
+        //이력을 찾을 수 없을 경우 오류 처리하지 않고 조용히 무시한다
+        if (referredId.isEmpty()) return;
 
         ProductWeightLog log = ProductWeightLog.builder()
                 .memberId(memberId)
                 .productId(productId)
-                .actionType(WeightLogType.CANCEL_BOOKMARK)
-                .appliedWeight(weightProps.getActionWeight().get(WeightLogType.CANCEL_BOOKMARK))
-                .referenceId(bookmarkLogId.get())
+                .actionType(cancelAction)
+                .appliedWeight(weightProps.getActionWeight().get(cancelAction))
+                .referenceId(referredId.get())
                 .eventTimeStamp(LocalDateTime.now())
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        //저장 후 종료
+        persistProductLogIfNotDuplicate(log);
+    }
+
+    private void persistProductLogIfNotDuplicate(ProductWeightLog log) {
+        LocalDateTime eventTime = log.getEventTimeStamp() != null
+                ? log.getEventTimeStamp()
+                : LocalDateTime.now();
+        if (isDuplicateAction(
+                log.getMemberId(),
+                log.getProductId(),
+                log.getActionType(),
+                eventTime,
+                weightProps.getActionDedup())) {
+            return;
+        }
         productWeightLogRepository.save(log);
+        metaTagWeightLogService.recordFromProduct(log);
+    }
+
+    private boolean isDuplicateAction(
+            Long memberId,
+            Long productId,
+            WeightLogType action,
+            LocalDateTime eventTimeStamp,
+            Duration due
+    ) {
+        if (eventTimeStamp == null || due == null || due.isZero() || due.isNegative()) {
+            return false;
+        }
+        return productWeightLogRepository
+                .findFirstByMemberIdAndProductIdAndActionTypeOrderByEventTimeStampDesc(
+                        memberId, productId, action)
+                .map(last -> {
+                    if (last.getEventTimeStamp() == null) {
+                        return false;
+                    }
+                    return Duration.between(last.getEventTimeStamp(), eventTimeStamp).abs().compareTo(due) < 0;
+                })
+                .orElse(false);
     }
 
     private Long resolveMemberId() {
