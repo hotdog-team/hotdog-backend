@@ -27,6 +27,9 @@ public class WeightingProperties {
     private View view = new View();
     private Bookmark bookmark = new Bookmark();
 
+    //DB 저장 직전 동일 action 중복 방지 (eventTimeStamp 기준)
+    private Duration actionDedup = Duration.ofSeconds(1);
+
     //조회시 시간 관련
     @Getter
     @Setter
