@@ -51,7 +51,7 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> getProductReviews(Long productId) {
-        return reviewRepository.findAllByProductIdOrderByCreatedAtDesc(productId)
+        return reviewRepository.findAllByProductIdAndStatusOrderByCreatedAtDesc(productId, "ACTIVE")
                 .stream()
                 .map(ReviewResponse::from)
                 .toList();
@@ -62,7 +62,7 @@ public class ReviewService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        return reviewRepository.findAllByMemberOrderByCreatedAtDesc(member)
+        return reviewRepository.findAllByMemberAndStatusOrderByCreatedAtDesc(member, "ACTIVE")
                 .stream()
                 .map(ReviewResponse::from)
                 .toList();
@@ -93,7 +93,7 @@ public class ReviewService {
             throw new IllegalArgumentException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
         }
 
-        reviewRepository.delete(review);
+        review.changeStatus("DELETED");
     }
 
     private void validateReviewRequest(Integer rating, String content) {

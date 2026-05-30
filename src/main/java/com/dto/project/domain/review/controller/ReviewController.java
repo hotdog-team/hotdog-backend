@@ -24,13 +24,13 @@ public class ReviewController {
     }
 
     // 리뷰 작성
-    @PostMapping("/products/{productId}/reviews")
+    @PostMapping("/orders/items/{orderItemId}/reviews")
     public String createReview(
             @RequestParam Long memberId,
-            @PathVariable Long productId,
+            @PathVariable Long orderItemId,
             @RequestBody ReviewCreateRequest request
     ) {
-        reviewService.createReview(memberId, productId, request);
+        reviewService.createReview(memberId, orderItemId, request);
         return "리뷰 작성 완료";
     }
 
