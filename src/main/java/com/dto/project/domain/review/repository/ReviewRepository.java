@@ -12,7 +12,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 1. [사용자] 특정 상품의 상태별(ACTIVE) 리뷰 목록 조회
     List<Review> findAllByProductIdAndStatusOrderByCreatedAtDesc(Long productId, String status);
 
-    // 2. [사용자] 내 상태별(ACTIVE) 리뷰 목록 조회 (추가됨!)
+    // 2. [사용자] 내 상태별(ACTIVE) 리뷰 목록 조회
     List<Review> findAllByMemberAndStatusOrderByCreatedAtDesc(Member member, String status);
 
     // 3. [공통] 해당 주문건(OrderItem)으로 작성된 리뷰가 이미 존재하는지 체크
