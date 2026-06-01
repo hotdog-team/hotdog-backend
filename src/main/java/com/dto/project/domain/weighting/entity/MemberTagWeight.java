@@ -1,5 +1,6 @@
-package com.dto.project.domain.member.entity;
+package com.dto.project.domain.weighting.entity;
 
+import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.metatags.entity.MetaTagEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,4 +36,9 @@ public class MemberTagWeight {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    //프로필 수정에 따른 가중치 점수 조정 로직
+    public void adjustWeightScore(int delta) {
+        this.weightScore += delta;
+    }
 }

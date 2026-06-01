@@ -3,6 +3,8 @@ package com.dto.project.domain.member.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class MemberResponse {
@@ -11,7 +13,7 @@ public class MemberResponse {
     private String phone;
     private String jobType;
     private String ageRange;
-    private Long purposeId;
+    private List<Long> profileTagIds;
     private boolean isJobRecommendEnabled;
 
     private String zipCode;

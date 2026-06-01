@@ -29,10 +29,9 @@ public class SignupRequest {
     // 2. 인적사항 및 취향 정보
     private String ageRange;      // 연령대
     private String jobType;       // 직종
-    private Long purposeId;       // 이용 목적
 
-    // 3. 관심사 다중 선택 (member_tag_weights 초기 설정용)
-    private List<Long> selectedTagIds;
+    // 프로필 태그 (member_tag_weights 초기 설정용)
+    private List<Long> profileTagIds;
 
     // 가입 시 동의 여부
     @JsonProperty("isJobRecommendEnabled")
