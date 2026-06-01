@@ -25,6 +25,9 @@ public class Product {
     @Column(nullable = false)
     private Integer price;
 
+    @Column(name = "discount_rate", nullable = false)
+    private Integer discountRate = 0;
+
     @Column(name = "delivery_fee")
     private Integer deliveryFee;
 
