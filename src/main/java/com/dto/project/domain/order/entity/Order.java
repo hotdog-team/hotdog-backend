@@ -85,4 +85,8 @@ public class Order {
         }
         this.status = OrderStatus.CANCELED;
     }
+
+    public void updateStatus(String statusStr) {
+        this.status = OrderStatus.valueOf(statusStr);
+    }
 }
