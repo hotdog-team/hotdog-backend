@@ -16,8 +16,7 @@ public class MemberUpdateRequest {
     private String detailAddress; // 상세 주소
 
     private String jobType;
-    private Long purposeId;                 // 단일 선택 항목 (이용 목적)
-    private List<Long> merchandisingTagIds; // 다중 선택 항목 (선호도/기획의도)
+    private List<Long> profileTagIds;       // 초기 메타태그(이용 목적/선호도/기획의도 포함)
 
     @JsonProperty("isJobRecommendEnabled")
     private Boolean isJobRecommendEnabled;

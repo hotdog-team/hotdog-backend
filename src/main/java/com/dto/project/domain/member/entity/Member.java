@@ -37,10 +37,6 @@ public class Member {
     @Column(name = "job_type", length = 100)
     private String jobType;
 
-    // 향후 MetaTag 엔티티와 별도 매핑 테이블을 통해 8가지 분류(Category, Seasonal, Purpose 등) 관리 예정
-    @Column(name = "purpose_id")
-    private Long purposeId;
-
     @Builder.Default
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean isJobRecommendEnabled = true;
@@ -70,12 +66,11 @@ public class Member {
     /**
      * 회원 프로필 수정
      */
-    public void updateProfile(String name, String phone, String ageRange, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
+    public void updateProfile(String name, String phone, String ageRange, String jobType, Boolean isJobRecommendEnabled) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
         if (ageRange != null) this.ageRange = ageRange;
         if (jobType != null) this.jobType = jobType;
-        if (purposeId != null) this.purposeId = purposeId;
         if (isJobRecommendEnabled != null) this.isJobRecommendEnabled = isJobRecommendEnabled;
     }
 

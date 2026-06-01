@@ -7,10 +7,8 @@ import com.dto.project.domain.member.dto.SignupRequest;
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.entity.MemberRole;
 import com.dto.project.domain.member.entity.MemberStatus;
-import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
-import com.dto.project.domain.member.repository.MemberTagWeightRepository;
-import com.dto.project.domain.metatags.repository.MetaTagRepository;
+import com.dto.project.domain.weighting.service.MemberTagWeightService;
 import com.dto.project.global.exception.DefaultErrorDetailMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -20,10 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -31,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class AuthService {
 
     private final MemberRepository memberRepository;
-    private final MemberTagWeightRepository memberTagWeightRepository;
-    private final MetaTagRepository metaTagRepository;
+    private final MemberTagWeightService memberTagWeightService;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final StringRedisTemplate redisTemplate;
@@ -51,40 +44,12 @@ public class AuthService {
                     .name(request.getName())
                     .ageRange(request.getAgeRange())
                     .jobType(request.getJobType())
-                    .purposeId(request.getPurposeId()) // 핵심 프로필 정보로 저장
                     .isJobRecommendEnabled(request.getIsJobRecommendEnabled())
                     .role(MemberRole.ROLE_USER)
                     .status(MemberStatus.ACTIVE)
                     .build());
 
-            List<MemberTagWeight> weightsToSave = new ArrayList<>();
-            Set<Long> allTagIds = new HashSet<>();
-
-            // '이용 목적' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
-            if (request.getPurposeId() != null) {
-                allTagIds.add(request.getPurposeId());
-            }
-
-            // 다중 선택된 나머지 '취향 정보' 가중치 저장 로직 (리스트 취합용으로 로직 개선)
-            if (request.getSelectedTagIds() != null && !request.getSelectedTagIds().isEmpty()) {
-                allTagIds.addAll(request.getSelectedTagIds());
-            }
-
-            // 취합된 태그들을 순회하며 영속성 객체 생성
-            for (Long tagId : allTagIds) {
-                metaTagRepository.findById(tagId).ifPresent(metaTagEntity -> {
-                    weightsToSave.add(MemberTagWeight.builder()
-                            .member(member)
-                            .metaTag(metaTagEntity)
-                            .weightScore(20)
-                            .build());
-                });
-            }
-
-            // DB 부하를 줄이고 트랜잭션 안전성을 위해 saveAll로 일괄 저장
-            if (!weightsToSave.isEmpty()) {
-                memberTagWeightRepository.saveAll(weightsToSave);
-            }
+            memberTagWeightService.initializeFromSignup(member, request.getProfileTagIds());
 
         } catch (Exception e) {
             e.printStackTrace();

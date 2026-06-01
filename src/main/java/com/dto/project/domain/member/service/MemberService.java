@@ -6,11 +6,8 @@ import com.dto.project.domain.member.dto.MemberResponse;
 import com.dto.project.domain.member.dto.MemberUpdateRequest;
 import com.dto.project.domain.member.dto.PasswordUpdateRequest;
 import com.dto.project.domain.member.entity.Member;
-import com.dto.project.domain.member.entity.MemberTagWeight;
 import com.dto.project.domain.member.repository.MemberRepository;
-import com.dto.project.domain.member.repository.MemberTagWeightRepository;
-import com.dto.project.domain.metatags.entity.MetaTagType;
-import com.dto.project.domain.metatags.repository.MetaTagRepository;
+import com.dto.project.domain.weighting.service.MemberTagWeightService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -26,8 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final MemberTagWeightRepository memberTagWeightRepository;
-    private final MetaTagRepository metaTagRepository;
+    private final MemberTagWeightService memberTagWeightService;
     private final StringRedisTemplate redisTemplate;
     private final AddressRepository addressRepository;
 
@@ -40,8 +36,8 @@ public class MemberService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
-        // 기본 인적사항(연락처 phone 추가됨) 및 핵심 목적 ID 업데이트
-        member.updateProfile(request.getName(), request.getPhone(), request.getJobType(), request.getAgeRange(),request.getPurposeId(), request.getIsJobRecommendEnabled());
+        // 기본 인적사항(연락처 phone 추가됨) 업데이트
+        member.updateProfile(request.getName(), request.getPhone(), request.getAgeRange(),request.getJobType(), request.getIsJobRecommendEnabled());
 
         if (request.getZipCode() != null || request.getBaseAddress() != null || request.getDetailAddress() != null) {
             Address address = addressRepository.findByMemberIdAndIsDefaultTrue(member.getId())
@@ -54,23 +50,8 @@ public class MemberService {
             addressRepository.save(address);
         }
 
-        // 이용 목적 가중치 정보 동기화
-        if (request.getPurposeId() != null) {
-            memberTagWeightRepository.deleteByMemberAndMetaTagType(member, MetaTagType.PURPOSE);
-            metaTagRepository.findById(request.getPurposeId()).ifPresent(tag ->
-                    memberTagWeightRepository.save(MemberTagWeight.builder().member(member).metaTag(tag).weightScore(20).build())
-            );
-        }
-
-        // 쇼핑 취향(MERCHANDISING) 가중치 정보 복수 동기화
-        if (request.getMerchandisingTagIds() != null) {
-            memberTagWeightRepository.deleteByMemberAndMetaTagType(member, MetaTagType.MERCHANDISING);
-            for (Long tagId : request.getMerchandisingTagIds()) {
-                metaTagRepository.findById(tagId).ifPresent(tag ->
-                        memberTagWeightRepository.save(MemberTagWeight.builder().member(member).metaTag(tag).weightScore(20).build())
-                );
-            }
-        }
+        // 가중치 동기화를 Weighting 도메인쪽으로 이관
+        memberTagWeightService.syncFromProfileUpdate(member, request.getProfileTagIds(), request.getAgeRange(), request.getJobType(), request.getIsJobRecommendEnabled());
     }
 
     // 2. 회원 탈퇴 처리
@@ -83,7 +64,7 @@ public class MemberService {
         member.withdraw();
 
         // 개인화 데이터 가중치 인덱스 일괄 삭제
-        memberTagWeightRepository.deleteAllByMember(member);
+        memberTagWeightService.deleteAllForMember(member);
 
         // Redis 저장소의 세션 및 토큰 정보 즉시 파기
         redisTemplate.delete("RT:" + email); // 리프레시 토큰 제거
@@ -110,7 +91,7 @@ public class MemberService {
                 .phone(member.getPhone())
                 .jobType(member.getJobType())
                 .ageRange(member.getAgeRange())
-                .purposeId(member.getPurposeId())
+                .profileTagIds(memberTagWeightService.findProfileTagIds(member))
                 .isJobRecommendEnabled(member.isJobRecommendEnabled())
                 .zipCode(address != null ? address.getZipCode() : null)
                 .baseAddress(address != null ? address.getBaseAddress() : null)

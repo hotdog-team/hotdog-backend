@@ -23,6 +23,9 @@ public class WeightingProperties {
 
     private double occupationBonus;
     private int productTagCap;
+    private int profileInitialScore = 20;
+    private int profileOccupationScore = 5;
+    private int profileAgeScore = 5;
 
     private View view = new View();
     private Bookmark bookmark = new Bookmark();
