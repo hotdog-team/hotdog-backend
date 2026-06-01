@@ -197,7 +197,7 @@ public class MemberTagWeightService {
                 );
     }
 
-    //변동값이 0 이하라면 row 제거 처리를 한다 - DB 용량 관리를 위함
+    //최종값이 0 이하라면 row 제거 처리를 한다 - DB 용량 관리를 위함
     private void adjustOrDelete(MemberTagWeight weight, int delta) {
         weight.adjustWeightScore(delta);
         if (weight.getWeightScore() <= 0) {
@@ -207,6 +207,7 @@ public class MemberTagWeightService {
         memberTagWeightRepository.save(weight);
     }
 
+    //MemberTagWeight 업데이트
     private MemberTagWeight buildWeight(Member member, MetaTagEntity metaTag, int score) {
         return MemberTagWeight.builder()
                 .member(member)
@@ -214,4 +215,21 @@ public class MemberTagWeightService {
                 .weightScore(score)
                 .build();
     }
+
+    //행동에 따른 score(delta) 추가
+    public void applyBehaviorScore(Member member, MetaTagEntity metaTag, int delta){
+        //값 변동이 없다면 의미없는 것으로 보고 return
+        if (delta == 0) return;
+        memberTagWeightRepository
+                .findByMember_IdAndMetaTag_Id(member.getId(), metaTag.getId())
+                .ifPresentOrElse(
+                        weight -> adjustOrDelete(weight, delta),
+                        () -> {
+                            if(delta > 0) {
+                                memberTagWeightRepository.save(buildWeight(member, metaTag, delta));
+                            }
+                        }
+                );
+    }
+
 }
