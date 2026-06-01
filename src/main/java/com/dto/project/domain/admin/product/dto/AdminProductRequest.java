@@ -8,6 +8,7 @@ public class AdminProductRequest {
     private Long categoryId;
     private String name;
     private Integer price;
+    private Integer discountRate;
     private Integer deliveryFee;
     private Integer stockQuantity;
     private String shortDescription;
