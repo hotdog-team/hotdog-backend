@@ -1,5 +1,6 @@
 package com.dto.project.domain.member.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,6 +15,7 @@ public class MemberResponse {
     private String jobType;
     private String ageRange;
     private List<Long> profileTagIds;
+    @JsonProperty("isJobRecommendEnabled")
     private boolean isJobRecommendEnabled;
 
     private String zipCode;
