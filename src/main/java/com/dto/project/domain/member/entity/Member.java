@@ -70,9 +70,10 @@ public class Member {
     /**
      * 회원 프로필 수정
      */
-    public void updateProfile(String name, String phone, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
+    public void updateProfile(String name, String phone, String ageRange, String jobType, Long purposeId, Boolean isJobRecommendEnabled) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
+        if (ageRange != null) this.ageRange = ageRange;
         if (jobType != null) this.jobType = jobType;
         if (purposeId != null) this.purposeId = purposeId;
         if (isJobRecommendEnabled != null) this.isJobRecommendEnabled = isJobRecommendEnabled;

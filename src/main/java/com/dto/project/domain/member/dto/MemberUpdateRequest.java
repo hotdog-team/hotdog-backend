@@ -10,6 +10,7 @@ import java.util.List;
 public class MemberUpdateRequest {
     private String name;
     private String phone;
+    private String ageRange; // 연령대
     private String zipCode;       // 우편번호
     private String baseAddress;   // 기본 주소
     private String detailAddress; // 상세 주소

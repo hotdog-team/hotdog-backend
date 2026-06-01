@@ -41,7 +41,7 @@ public class MemberService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
         // 기본 인적사항(연락처 phone 추가됨) 및 핵심 목적 ID 업데이트
-        member.updateProfile(request.getName(), request.getPhone(), request.getJobType(), request.getPurposeId(), request.getIsJobRecommendEnabled());
+        member.updateProfile(request.getName(), request.getPhone(), request.getJobType(), request.getAgeRange(),request.getPurposeId(), request.getIsJobRecommendEnabled());
 
         if (request.getZipCode() != null || request.getBaseAddress() != null || request.getDetailAddress() != null) {
             Address address = addressRepository.findByMemberIdAndIsDefaultTrue(member.getId())

@@ -35,6 +35,7 @@ public class AdminProductService {
         product.setCategoryId(request.getCategoryId());
         product.setName(request.getName());
         product.setPrice(request.getPrice());
+        product.setDiscountRate(request.getDiscountRate() != null ? request.getDiscountRate() : 0);
         product.setDeliveryFee(request.getDeliveryFee());
         product.setStockQuantity(request.getStockQuantity());
         product.setShortDescription(request.getShortDescription());
@@ -61,6 +62,9 @@ public class AdminProductService {
     public void updateProduct(Long productId, AdminProductRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품을 찾을 수 없습니다. ID: " + productId));
+
+        // updateProductInfo 메서드에 discountRate 파라미터 추가 전달
+        int discountRateToUpdate = request.getDiscountRate() != null ? request.getDiscountRate() : 0;
 
         // 상품 기본 정보 업데이트
         product.updateProductInfo(

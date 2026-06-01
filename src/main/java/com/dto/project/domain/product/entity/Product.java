@@ -84,6 +84,7 @@ public class Product {
         this.categoryId = categoryId;
         this.name = name;
         this.price = price;
+        this.discountRate = discountRate;
         this.deliveryFee = deliveryFee;
         this.stockQuantity = stockQuantity;
         this.shortDescription = shortDescription;
