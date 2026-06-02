@@ -25,10 +25,12 @@ public class MetaTagWeightLogService {
     private final MemberTagWeightService memberTagWeightService;
     private final MemberRepository memberRepository;
 
-    //ProductWeightLog의 값을 사용하여 기록
-    public void recordFromProduct(ProductWeightLog productLog) {
+    //ProductWeightLog의 값을 사용하여 기록 (applyScore=false면 로그만 등록한다)
+    public void recordFromProduct(ProductWeightLog productLog, boolean applyScore) {
         List<MetaTagProduct> mappings = metaTagProductRepository.findByProduct_Id(productLog.getProductId());
-        if (mappings.isEmpty()) return;
+        if (mappings.isEmpty()) {
+            return;
+        }
 
         Integer weight = weightProps.getActionWeight().get(productLog.getActionType());
         Long memberId = productLog.getMemberId();
@@ -49,7 +51,10 @@ public class MetaTagWeightLogService {
 
         metaTagWeightLogRepository.saveAll(logs);
 
-        //memberId -> Member 처리하여 보냄
+        if (!applyScore || weight == null) {
+            return;
+        }
+
         memberRepository.findById(memberId).ifPresent(member -> {
             for (MetaTagProduct m : mappings) {
                 memberTagWeightService.applyBehaviorScore(member, m.getMetaTag(), weight);

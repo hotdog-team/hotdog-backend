@@ -1,5 +1,6 @@
 package com.dto.project.domain.weighting.scheduler;
 
+import com.dto.project.domain.weighting.service.MemberTagWeightHotService;
 import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ public class ActionLogFlushScheduler {
     //1 트랜잭션 = 500건으로 설정(팀내 policy 의거)
     private static final int MAX_PER_RUN = 500;
 
+    private final MemberTagWeightHotService memberTagWeightHotService;
     private final ProductWeightLogService productWeightLogService;
 
     //매일 새벽 2시에 일괄 등록(batch)하도록 처리(팀내 policy에 의거)
@@ -37,7 +39,10 @@ public class ActionLogFlushScheduler {
             totalCart += batch;
         }
 
-        log.info("behavior 등록 완료: 총 {}건, cart pending 등록 완료: 총 {}건", totalBehavior, totalCart);
+        //hot 데이터 DB에 등록
+        memberTagWeightHotService.mergeHotToMemberTagWeights();
+
+        log.info("행동 등록 완료: 총 {}건", totalBehavior + totalCart);
     }
 
     //1분 후 bookmark 등록
