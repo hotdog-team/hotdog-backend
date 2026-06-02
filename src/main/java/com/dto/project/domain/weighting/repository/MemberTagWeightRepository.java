@@ -46,4 +46,12 @@ public interface MemberTagWeightRepository extends JpaRepository<MemberTagWeight
     @Modifying
     @Query("DELETE FROM MemberTagWeight mtw WHERE mtw.member = :member")
     void deleteAllByMember(@Param("member") Member member);
+
+    // member의 메타태그 가중치 점수 불러오기
+    @Query("""
+           SELECT mtw FROM MemberTagWeight mtw
+           JOIN FETCH mtw.metaTag
+           WHERE mtw.member.id = :memberId
+    """)
+    List<MemberTagWeight> findAllByMemberIdWithMetaTag(@Param("memberId") Long memberId);
 }

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,9 +37,25 @@ public class MemberTagWeightHotService {
         applyDeltaFromProduct(memberId, productId, -delta);
     }
 
-    //조회시 사용(아직 비워둠)
+    //hot delta값을 조회할 때 사용한다
     public List<MemberTagHotScore> getAllScore(Long memberId) {
-        return null;
+        String key = hotKey(memberId);
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
+        if (entries.isEmpty()) return null;
+
+        List<MemberTagHotScore> result = new ArrayList<>();
+        for (Map.Entry<Object, Object> entry : entries.entrySet()){
+            Long metaTagId = Long.parseLong((String)entry.getKey());
+            int delta = Integer.parseInt((String)entry.getValue());
+            if (delta == 0) continue;
+
+            MemberTagHotScore.builder()
+                    .metaTagId(metaTagId)
+                    .hotDelta(delta)
+                    .build();
+        }
+
+        return result;
     }
 
     // 배치 마감: hot hash 전체를 member_tag_weights에 반영 후 hot 삭제
@@ -46,7 +63,6 @@ public class MemberTagWeightHotService {
         Set<String> keys = redisTemplate.keys(HOT_KEY_PREFIX + "*");
         if (keys.isEmpty()) return;
 
-        int mergedMemberCount = 0;
         for (String key : keys) {
             Long memberId = Long.parseLong(key.substring(HOT_KEY_PREFIX.length()));
             Member member = memberRepository.findById(memberId).orElse(null);
@@ -66,7 +82,6 @@ public class MemberTagWeightHotService {
                         .ifPresent(tag -> memberTagWeightService.applyBehaviorScore(member, tag, delta));
             }
             redisTemplate.delete(key);
-            mergedMemberCount++;
         }
     }
 

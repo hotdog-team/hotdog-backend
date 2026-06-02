@@ -10,12 +10,7 @@ import com.dto.project.domain.weighting.config.WeightingProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 //기존 Service Refactor 및 직종, 나이대 정보 동기화 처리
 //변경값만 반영되도록 처리

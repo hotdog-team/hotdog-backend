@@ -21,9 +21,9 @@ public class MetaTagWeightLogService {
 
     private final MetaTagWeightLogRepository metaTagWeightLogRepository;
     private final MetaTagProductRepository metaTagProductRepository;
+    private final MemberRepository memberRepository;
     private final WeightingProperties weightProps;
     private final MemberTagWeightService memberTagWeightService;
-    private final MemberRepository memberRepository;
 
     //ProductWeightLog의 값을 사용하여 기록 (applyScore=false면 로그만 등록한다)
     public void recordFromProduct(ProductWeightLog productLog, boolean applyScore) {
