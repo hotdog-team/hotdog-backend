@@ -18,7 +18,7 @@ public class Faq {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "CLOB", nullable = false)
     private String content;
 
     @Column(nullable = false)
