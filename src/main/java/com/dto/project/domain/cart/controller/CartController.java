@@ -1,6 +1,8 @@
 package com.dto.project.domain.cart.controller;
 
 import com.dto.project.domain.cart.dto.CartAddRequest;
+import com.dto.project.domain.cart.dto.CartBulkAddRequest;
+import com.dto.project.domain.cart.dto.CartBulkDeleteRequest;
 import com.dto.project.domain.cart.dto.CartResponse;
 import com.dto.project.domain.cart.dto.CartUpdateRequest;
 import com.dto.project.domain.cart.service.CartService;
@@ -73,5 +75,25 @@ public class CartController {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         return member.getId();
+    }
+    
+    // 장바구니 다량 추가
+    @PostMapping("/bulk")
+    public void addCarts(
+            Authentication authentication,
+            @RequestBody CartBulkAddRequest request
+    ) {
+        Long memberId = getLoginMemberId(authentication);
+        cartService.addCarts(memberId, request);
+    }
+    
+    // 장바구니 다량 삭제
+    @DeleteMapping("/bulk")
+    public void deleteCarts(
+            Authentication authentication,
+            @RequestBody CartBulkDeleteRequest request
+    ) {
+        Long memberId = getLoginMemberId(authentication);
+        cartService.deleteCarts(memberId, request);
     }
 }
