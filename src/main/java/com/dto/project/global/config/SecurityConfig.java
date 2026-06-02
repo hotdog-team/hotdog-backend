@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh").permitAll() // 누구나 접근 가능
                         .requestMatchers("/api/admin/reviews/**").hasAuthority("ROLE_ADMIN") //리뷰 관리자 전용
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN") // 관리자 전용
+                        .requestMatchers(HttpMethod.GET, "/api/faqs").permitAll()
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/members/me").permitAll()
