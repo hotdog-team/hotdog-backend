@@ -1,13 +1,12 @@
 package com.dto.project.domain.weighting.service;
 
-import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.product.repository.ProductRepository;
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import com.dto.project.domain.weighting.dto.ProductWeightLogRequest;
 import com.dto.project.domain.weighting.entity.ProductWeightLog;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import com.dto.project.domain.weighting.repository.ProductWeightLogRepository;
-import com.dto.project.global.exception.DefaultErrorDetailMessages;
+import com.dto.project.global.util.SecurityUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -39,7 +36,6 @@ public class ProductWeightLogService {
     public static final String CART_PENDING_KEY = "cart:pending";
 
     private final ProductWeightLogRepository productWeightLogRepository;
-    private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
     private final MemberTagWeightHotService memberTagWeightHotService;
     //log-write
@@ -47,13 +43,14 @@ public class ProductWeightLogService {
     private final MetaTagWeightLogService metaTagWeightLogService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final SecurityUtil securityUtil;
 
     //기록 - request 전체 받아 분할함
     //TODO: 조회 및 구매에 있어서 재행동할 경우 +@
     //TODO: 다수 구매/취소 처리 관련
     @Transactional
     public void recordLogs(ProductWeightLogRequest request) {
-        Long memberId = resolveMemberId();
+        Long memberId = securityUtil.resolveMemberId();
         Long productId = request.getProductId();
 
         if (!productRepository.existsById(productId)) {
@@ -370,17 +367,5 @@ public class ProductWeightLogService {
                 })
                 .orElse(false);
     }
-
-    private Long resolveMemberId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (!auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED);
-        }
-        String email = auth.getName();
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원 정보를 찾을 수 없습니다."))
-                .getId();
-    }
-
     
 }
