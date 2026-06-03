@@ -8,6 +8,9 @@ import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,13 +55,17 @@ public class BookmarkService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookmarkResponse> getBookmarks(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+    public Page<BookmarkResponse> getBookmarks(
+            Long memberId,
+            Pageable pageable
+    ) {
 
-        return bookmarkRepository.findAllByMember(member)
-                .stream()
-                .map(BookmarkResponse::from)
-                .toList();
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        return bookmarkRepository
+                .findAllByMember(member, pageable)
+                .map(BookmarkResponse::from);
     }
 }

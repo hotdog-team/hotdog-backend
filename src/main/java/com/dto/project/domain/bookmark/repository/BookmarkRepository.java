@@ -3,6 +3,9 @@ package com.dto.project.domain.bookmark.repository;
 import com.dto.project.domain.bookmark.entity.Bookmark;
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.product.entity.Product;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,6 +18,8 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     boolean existsByMemberAndProduct(Member member, Product product);
 
     List<Bookmark> findAllByMember(Member member);
+    
+    Page<Bookmark> findAllByMember(Member member, Pageable pageable);
 
     void deleteByMemberAndProduct(Member member, Product product);
 }

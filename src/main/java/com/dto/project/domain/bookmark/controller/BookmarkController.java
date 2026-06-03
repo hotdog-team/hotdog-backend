@@ -3,6 +3,9 @@ package com.dto.project.domain.bookmark.controller;
 import com.dto.project.domain.bookmark.dto.BookmarkResponse;
 import com.dto.project.domain.bookmark.service.BookmarkService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,7 +36,10 @@ public class BookmarkController {
     }
 
     @GetMapping
-    public List<BookmarkResponse> getBookmarks(@RequestParam Long memberId) {
-        return bookmarkService.getBookmarks(memberId);
+    public Page<BookmarkResponse> getBookmarks(
+            @RequestParam Long memberId,
+            Pageable pageable
+    ) {
+        return bookmarkService.getBookmarks(memberId, pageable);
     }
 }

@@ -10,6 +10,9 @@ import com.dto.project.domain.review.dto.ReviewUpdateRequest;
 import com.dto.project.domain.review.entity.Review;
 import com.dto.project.domain.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,24 +51,21 @@ public class ReviewService {
 
         reviewRepository.save(review);
     }
-
+    
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getProductReviews(Long productId) {
-        return reviewRepository.findAllByProductIdAndStatusOrderByCreatedAtDesc(productId, "ACTIVE")
-                .stream()
-                .map(ReviewResponse::from)
-                .toList();
+    public Page<ReviewResponse> getProductReviews(Long productId, Pageable pageable) {
+        return reviewRepository
+                .findAllByProductIdAndStatusOrderByCreatedAtDesc(productId, "ACTIVE", pageable)
+                .map(ReviewResponse::from);
     }
 
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getMyReviews(Long memberId) {
+    public Page<ReviewResponse> getMyReviews(Long memberId, Pageable pageable) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        return reviewRepository.findAllByMemberAndStatusOrderByCreatedAtDesc(member, "ACTIVE")
-                .stream()
-                .map(ReviewResponse::from)
-                .toList();
+        return reviewRepository.findAllByMemberAndStatusOrderByCreatedAtDesc(member, "ACTIVE", pageable)
+                .map(ReviewResponse::from);
     }
 
     public void updateReview(Long memberId, Long reviewId, ReviewUpdateRequest request) {
