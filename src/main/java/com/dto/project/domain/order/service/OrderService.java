@@ -1,6 +1,10 @@
 package com.dto.project.domain.order.service;
 
+import com.dto.project.domain.cart.entity.Cart;
+import com.dto.project.domain.cart.repository.CartRepository;
 import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.order.dto.CheckoutRequest;
+import com.dto.project.domain.order.dto.CheckoutResponse;
 import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.entity.OrderItem;
@@ -25,7 +29,85 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final CartRepository cartRepository;
+    
+ // ===== 주문서 조회 =====
 
+ // 장바구니 기반 주문서 조회
+ public CheckoutResponse createCartCheckout(CheckoutRequest request, Member member) {
+
+     List<CheckoutResponse.Item> items = new ArrayList<>();
+     int totalAmount = 0;
+
+     for (Long cartId : request.getCartIds()) {
+         // 선택한 장바구니 상품 조회
+         Cart cart = cartRepository.findById(cartId)
+                 .orElseThrow(() -> new IllegalArgumentException("장바구니 정보를 찾을 수 없습니다."));
+
+         // 본인 장바구니 상품인지 확인
+         if (!cart.getMemberId().equals(member.getId())) {
+             throw new IllegalArgumentException("본인의 장바구니만 주문할 수 있습니다.");
+         }
+
+         // 상품별 금액 계산
+         int unitPrice = cart.getPrice();
+         int totalPrice = unitPrice * cart.getQuantity();
+
+         // 주문서 상품 목록 생성
+         items.add(CheckoutResponse.Item.builder()
+                 .cartId(cart.getId())
+                 .productId(cart.getProduct().getId())
+                 .productName(cart.getProductName())
+                 .imageUrl(cart.getImageUrl())
+                 .quantity(cart.getQuantity())
+                 .unitPrice(unitPrice)
+                 .totalPrice(totalPrice)
+                 .build());
+
+         // 주문서 전체 금액 누적
+         totalAmount += totalPrice;
+     }
+
+     return CheckoutResponse.builder()
+             .items(items)
+             .totalAmount(totalAmount)
+             .build();
+ }
+ 
+//바로구매 기반 주문서 조회
+public CheckoutResponse createDirectCheckout(CheckoutRequest request, Member member) {
+
+  // 상품 조회
+  Product product = productRepository.findById(request.getProductId())
+          .orElseThrow(() -> new IllegalArgumentException("상품 정보를 찾을 수 없습니다."));
+
+  int quantity = request.getQuantity();
+
+  // 수량 검증
+  if (quantity <= 0) {
+      throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+  }
+
+  int unitPrice = product.getPrice();
+  int totalPrice = unitPrice * quantity;
+
+  // 주문서 상품 정보 생성
+  CheckoutResponse.Item item = CheckoutResponse.Item.builder()
+	        .cartId(null)
+	        .productId(product.getId())
+	        .productName(product.getName())
+	        .imageUrl(null)
+	        .quantity(quantity)
+	        .unitPrice(unitPrice)
+	        .totalPrice(totalPrice)
+	        .build();
+
+  return CheckoutResponse.builder()
+          .items(List.of(item))
+          .totalAmount(totalPrice)
+          .build();
+}
+    
     @Transactional
     public Long createOrder(OrderRequest request, Member member) {
 

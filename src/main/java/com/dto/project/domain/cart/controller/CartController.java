@@ -6,8 +6,6 @@ import com.dto.project.domain.cart.dto.CartBulkDeleteRequest;
 import com.dto.project.domain.cart.dto.CartResponse;
 import com.dto.project.domain.cart.dto.CartUpdateRequest;
 import com.dto.project.domain.cart.service.CartService;
-import com.dto.project.domain.member.entity.Member;
-import com.dto.project.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +18,6 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
-    private final MemberRepository memberRepository;
 
     // 장바구니 추가
     @PostMapping
@@ -67,16 +64,6 @@ public class CartController {
         cartService.clearCart(memberId);
     }
 
-    private Long getLoginMemberId(Authentication authentication) {
-
-        String email = authentication.getName();
-
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        return member.getId();
-    }
-    
     // 장바구니 다량 추가
     @PostMapping("/bulk")
     public void addCarts(
@@ -86,7 +73,7 @@ public class CartController {
         Long memberId = getLoginMemberId(authentication);
         cartService.addCarts(memberId, request);
     }
-    
+
     // 장바구니 다량 삭제
     @DeleteMapping("/bulk")
     public void deleteCarts(
@@ -95,5 +82,10 @@ public class CartController {
     ) {
         Long memberId = getLoginMemberId(authentication);
         cartService.deleteCarts(memberId, request);
+    }
+
+    // JWT 인증 정보에서 로그인 회원 ID 추출
+    private Long getLoginMemberId(Authentication authentication) {
+        return Long.valueOf(authentication.getName());
     }
 }
