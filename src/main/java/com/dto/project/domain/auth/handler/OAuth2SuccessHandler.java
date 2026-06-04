@@ -1,6 +1,8 @@
 package com.dto.project.domain.auth.handler;
 
 import com.dto.project.domain.auth.jwt.JwtProvider;
+import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtProvider jwtProvider;
+    private final MemberRepository memberRepository;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -32,14 +35,19 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String email = getEmailFromAttributes(attributes);
         String role = "USER";
 
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소셜 회원입니다."));
+        Long memberId = member.getId();
+
         // 1. JWT 토큰 생성
         String accessToken = jwtProvider.createAccessToken(email, role);
         String refreshToken = jwtProvider.createRefreshToken(email);
 
-        // 2. 프론트엔드 리다이렉트 URL 생성 (yml 설정값 활용)
+        // 2. 프론트엔드 리다이렉트 URL 생성
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/social-success")
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
+                .queryParam("memberId", memberId)
                 .build().toUriString();
 
         System.out.println("리다이렉트 타겟: " + targetUrl);

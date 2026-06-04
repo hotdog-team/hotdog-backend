@@ -46,16 +46,23 @@ public class SecurityConfig {
 
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh").permitAll() // 누구나 접근 가능
-                        .requestMatchers("/api/admin/reviews/**").hasAuthority("ROLE_ADMIN") //리뷰 관리자 전용
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN") // 관리자 전용
+                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh").permitAll()
+
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+
                         .requestMatchers(HttpMethod.GET, "/api/faqs").permitAll()
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/members/me").permitAll()
-                        //리뷰 관련 설정
+
+                        // 리뷰 관련 설정
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/*/reviews").permitAll()
                         .requestMatchers("/api/orders/items/*/reviews", "/api/reviews/**").authenticated()
+
+                        // 1:1 문의는 로그인한 유저만 가능
+                        .requestMatchers(HttpMethod.POST, "/api/qnas").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/members/me/qnas").authenticated()
+
                         .anyRequest().authenticated()
                 )
 
