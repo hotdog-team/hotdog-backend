@@ -40,7 +40,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Long memberId = member.getId();
 
         // 1. JWT 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(email, role);
+        String accessToken = jwtProvider.createAccessToken(memberId, email, role);
         String refreshToken = jwtProvider.createRefreshToken(email);
 
         // 2. 프론트엔드 리다이렉트 URL 생성

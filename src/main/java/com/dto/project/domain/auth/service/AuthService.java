@@ -72,7 +72,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_FAILED);
         }
 
-        String accessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
+        String accessToken = jwtProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // Redis에 Refresh Token 저장 (7일 유지)
@@ -123,7 +123,7 @@ public class AuthService {
         }
 
         // 5. 모든 검증 통과 시 새로운 토큰 세트 발급
-        String newAccessToken = jwtProvider.createAccessToken(member.getEmail(), member.getRole().name());
+        String newAccessToken = jwtProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole().name());
         String newRefreshToken = jwtProvider.createRefreshToken(member.getEmail());
 
         // 6. Redis 정보 업데이트
