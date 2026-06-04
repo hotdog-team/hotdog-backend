@@ -2,6 +2,7 @@ package com.dto.project.domain.weighting.scheduler;
 
 import com.dto.project.domain.weighting.service.MemberTagWeightDecayService;
 import com.dto.project.domain.weighting.service.MemberTagWeightHotService;
+import com.dto.project.domain.weighting.service.MemberTagWeightRefreshService;
 import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class ActionLogFlushScheduler {
     private final MemberTagWeightHotService memberTagWeightHotService;
     private final ProductWeightLogService productWeightLogService;
     private final MemberTagWeightDecayService memberTagWeightDecayService;
+    private final MemberTagWeightRefreshService memberTagWeightRefreshService;
 
     //매일 새벽 2시에 일괄 등록(batch)하도록 처리(팀내 policy에 의거)
     @Scheduled(cron = "0 0 2 * * *")
@@ -43,6 +45,7 @@ public class ActionLogFlushScheduler {
 
         //hot 데이터 DB에 등록
         memberTagWeightHotService.mergeHotToMemberTagWeights();
+        memberTagWeightRefreshService.applyUplift();
         memberTagWeightDecayService.applyDecayFromUpdatedAt();
 
         log.info("행동 등록 완료: 총 {}건", totalBehavior + totalCart);

@@ -26,7 +26,8 @@ public class MemberTagWeightDecayService {
 
             long days = ChronoUnit.DAYS.between(updatedAt, LocalDateTime.now());
 
-            if (days > 90) {
+            //1년 6개월 후까지 갱신안되면 delete 처리함
+            if (days > 547) {
                 if(weight.getProfileScore() == null || weight.getProfileScore() <= 0) {
                     memberTagWeightRepository.delete(weight);
                 }
@@ -46,16 +47,6 @@ public class MemberTagWeightDecayService {
                 continue;
             }
 
-            int profile = weight.getProfileScore() != null ? weight.getProfileScore() : 0;
-            if (effectiveScore <= 0) {
-                if (profile <= 0) {
-                    memberTagWeightRepository.delete(weight);
-                } else {
-                    memberTagWeightRepository.updateEffectiveScore(weight.getId(), 0.0);
-                }
-                continue;
-            }
-
             memberTagWeightRepository.updateEffectiveScore(weight.getId(), effectiveScore);
         }
     }
@@ -64,7 +55,7 @@ public class MemberTagWeightDecayService {
         if (days <= 30) return 1.0;
         if (days <= 60) return 0.7;
         if (days <= 90) return 0.3;
-        return 0;
+        return 0.0;
     }
 
 }

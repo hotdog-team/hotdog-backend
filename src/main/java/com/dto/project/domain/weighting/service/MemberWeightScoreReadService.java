@@ -4,6 +4,7 @@ import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.metatags.entity.MetaTagEntity;
 import com.dto.project.domain.metatags.entity.MetaTagType;
+import com.dto.project.domain.metatags.entity.SeasonalMetaTag;
 import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import com.dto.project.domain.weighting.dto.MemberTagHotScore;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,17 +52,12 @@ public class MemberWeightScoreReadService {
         Set<Long> allTagIds = new HashSet<>(dbScoreMap.keySet());
         allTagIds.addAll(hotDeltaMap.keySet());
 
+        LocalDate today = LocalDate.now();
         Map<Long, Double> result = new HashMap<>();
         for (Long metaTagId : allTagIds) {
             MemberTagWeight db = dbScoreMap.get(metaTagId);
-            double dbScore = resolveDbScore(db);
-            int hotDelta = hotDeltaMap.getOrDefault(metaTagId, 0);
-
-            double weightScore = dbScore + hotDelta;
-            if (weightScore <= 0) continue;
 
             MetaTagEntity metaTag;
-
             if (db != null) {
                 metaTag = db.getMetaTag();
             } else {
@@ -68,6 +65,20 @@ public class MemberWeightScoreReadService {
             }
 
             if (metaTag == null) continue;
+
+            if (metaTag.getType() == MetaTagType.SEASONAL) {
+                Optional<SeasonalMetaTag> season = SeasonalMetaTag.fromMetaTagId(metaTagId);
+                if (season.isPresent() && season.get().isActive(today)) {
+                    result.put(metaTagId, 1.0);
+                }
+                continue;
+            }
+
+            double dbScore = resolveDbScore(db);
+            int hotDelta = hotDeltaMap.getOrDefault(metaTagId, 0);
+
+            double weightScore = dbScore + hotDelta;
+            if (weightScore <= 0) continue;
 
             double coefficient = weightProps.getMetaTagCoefficient()
                     .getOrDefault(metaTag.getType(), 1.0);
@@ -81,6 +92,13 @@ public class MemberWeightScoreReadService {
             }
 
             result.put(metaTagId, weightScore * coefficient);
+        }
+
+        for (SeasonalMetaTag season : SeasonalMetaTag.values()) {
+            if (!season.isActive(today)) {
+                continue;
+            }
+            result.putIfAbsent(season.getMetaTagId(), 1.0);
         }
 
         return result;
