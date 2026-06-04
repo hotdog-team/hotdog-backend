@@ -72,6 +72,9 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_FAILED);
         }
 
+        // 로그인 성공 시 마지막 접속 시간 갱신
+        member.updateLastLoginAt();
+
         String accessToken = jwtProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(member.getEmail());
 

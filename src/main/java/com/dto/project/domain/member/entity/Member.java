@@ -59,6 +59,9 @@ public class Member {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     // ==========================================
     // 비즈니스 로직 메서드
     // ==========================================
@@ -104,6 +107,11 @@ public class Member {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 권한 또는 상태 값입니다.");
         }
+    }
+
+    // 로그인 성공 시 호출하여 마지막 접속 시간을 현재로 갱신하는 메서드
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
     }
 }
 

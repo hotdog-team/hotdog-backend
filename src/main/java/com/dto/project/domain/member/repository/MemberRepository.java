@@ -5,9 +5,11 @@ import com.dto.project.domain.member.entity.MemberStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
@@ -18,6 +20,10 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     // 회원가입할 때 이미 존재하는 이메일인지 중복 확인하기
     boolean existsByEmail(String email);
 
+    // 1년 이상 미접속한 ACTIVE 유저를 DORMANT으로 일괄 변경
+    @Modifying
+    @Query("UPDATE Member m SET m.status = 'DORMANT' WHERE m.status = 'ACTIVE' AND m.lastLoginAt < :oneYearAgo")
+    int updateDormantMembers(@Param("oneYearAgo") LocalDateTime oneYearAgo);
 
      //[관리자용] 동적 검색 및 필터링 쿼리
     @Query("SELECT m FROM Member m WHERE " +
