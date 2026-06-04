@@ -62,6 +62,13 @@ public class Product {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // WeightScore 적용
+    public void adjustWeightScore(int delta) {
+        int current = this.weightScore != null ? this.weightScore : 0;
+        this.weightScore = Math.max(0, current + delta);
+        this.updatedAt = LocalDateTime.now();
+    }
+
     // 비즈니스 로직 (재고 차감)
     public void decreaseStock(int quantity) {
         if (this.stockQuantity < quantity) {

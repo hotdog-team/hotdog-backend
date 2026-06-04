@@ -321,6 +321,18 @@ public class ProductWeightLogService {
         }
         productWeightLogRepository.save(log);
         metaTagWeightLogService.recordFromProduct(log, !consumesHot);
+        applyProductWeightOnPersist(log);
+    }
+
+    //ProductWeight를 반영한다
+    private void applyProductWeightOnPersist(ProductWeightLog log) {
+        Integer weight = log.getAppliedWeight();
+        if (weight == null || weight == 0) return;
+
+        productRepository.findById(log.getProductId()).ifPresent(product -> {
+            product.adjustWeightScore(weight);
+            productRepository.save(product);
+        });
     }
 
     //VIEW | CART | BOOKMARK인지 확인한다(true/false)
