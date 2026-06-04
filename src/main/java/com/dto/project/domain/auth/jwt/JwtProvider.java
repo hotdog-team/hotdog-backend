@@ -23,9 +23,10 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String createAccessToken(String email, String role) {
+    public String createAccessToken(Long memberId, String email, String role) {
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("role", role);
+        claims.put("memberId", memberId);
 
         Date now = new Date();
         return Jwts.builder()
