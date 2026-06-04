@@ -49,10 +49,10 @@ public class MemberTagWeightHotService {
             int delta = Integer.parseInt((String)entry.getValue());
             if (delta == 0) continue;
 
-            MemberTagHotScore.builder()
+            result.add(MemberTagHotScore.builder()
                     .metaTagId(metaTagId)
                     .hotDelta(delta)
-                    .build();
+                    .build());
         }
 
         return result;

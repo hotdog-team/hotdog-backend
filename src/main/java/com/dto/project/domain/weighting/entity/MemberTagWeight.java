@@ -30,15 +30,34 @@ public class MemberTagWeight {
     @JoinColumn(name = "meta_tag_id", nullable = false)
     private MetaTagEntity metaTag;
 
+    @Column(name = "profile_score", nullable = false)
+    private Integer profileScore;
+
     @Column(name = "weight_score", nullable = false)
     private Integer weightScore;
+
+    @Column(name = "effective_score", nullable = false)
+    private Double effectiveScore;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     //프로필 수정에 따른 가중치 점수 조정 로직
+    public void adjustProfileScore(int delta) {
+        int current = this.profileScore != null ? this.profileScore : 0;
+        this.profileScore = current + delta;
+    }
+
     public void adjustWeightScore(int delta) {
-        this.weightScore += delta;
+        int current = this.weightScore != null ? this.weightScore : 0;
+        this.weightScore = current + delta;
+    }
+
+    //행동 점수 0점 처리
+    public boolean hasNoScore() {
+        int profile = this.profileScore != null ? this.profileScore : 0;
+        int weight = this.weightScore != null ? this.weightScore : 0;
+        return profile <= 0 && weight <= 0;
     }
 }

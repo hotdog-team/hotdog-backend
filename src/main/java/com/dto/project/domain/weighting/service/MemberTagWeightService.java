@@ -31,7 +31,7 @@ public class MemberTagWeightService {
 
     //Member의 profileTagIds를 찾아 List화한다
     public List<Long> findProfileTagIds(Member member) {
-        return memberTagWeightRepository.findMetaTagIdsByMemberIdAndMetaTagTypeInAndWeightScoreGreaterThanEqual(
+        return memberTagWeightRepository.findMetaTagIdsByMemberIdAndMetaTagTypeInAndProfileScoreGreaterThanEqual(
                 member.getId(), PROFILE_TAG_TYPES, weightProps.getProfileInitialScore());
     }
 
@@ -89,7 +89,7 @@ public class MemberTagWeightService {
         Long newTagId = newTag.map(MetaTagEntity::getId).orElse(null);
         for (MemberTagWeight weight : current) {
             if (!weight.getMetaTag().getId().equals(newTagId)) {
-                adjustOrDelete(weight, -baseScore);
+                adjustProfileOrDelete(weight, -baseScore);
             }
         }
 
@@ -97,7 +97,7 @@ public class MemberTagWeightService {
             boolean alreadyPresent = current.stream()
                     .anyMatch(weight -> weight.getMetaTag().getId().equals(tag.getId()));
             if (!alreadyPresent) {
-                applyBaseDelta(member, tag, baseScore);
+                applyProfileDelta(member, tag, baseScore);
             }
         });
     }
@@ -110,7 +110,7 @@ public class MemberTagWeightService {
         }
         metaTagRepository.findByNameAndType(ageRange, MetaTagType.AGE_PREFERENCE)
                 .ifPresent(tag -> memberTagWeightRepository.save(
-                        buildWeight(member, tag, weightProps.getProfileAgeScore())));
+                        buildProfileWeight(member, tag, weightProps.getProfileAgeScore())));
     }
 
     // profileTagIds 동기화
@@ -126,14 +126,14 @@ public class MemberTagWeightService {
             Long tagId = weight.getMetaTag().getId();
             currentTagIds.add(tagId);
             if (!newTagIds.contains(tagId)) {
-                adjustOrDelete(weight, -baseScore);
+                adjustProfileOrDelete(weight, -baseScore);
             }
         }
 
         for (Long tagId : newTagIds) {
             if (!currentTagIds.contains(tagId)) {
                 metaTagRepository.findById(tagId)
-                        .ifPresent(tag -> applyBaseDelta(member, tag, baseScore));
+                        .ifPresent(tag -> applyProfileDelta(member, tag, baseScore));
             }
         }
     }
@@ -168,7 +168,7 @@ public class MemberTagWeightService {
         // 취합된 태그들을 순회하며 영속성 객체 생성
         for (Long tagId : tagIds) {
             metaTagRepository.findById(tagId).ifPresent(metaTag ->
-                    weightsToSave.add(buildWeight(member, metaTag, weightProps.getProfileInitialScore())));
+                    weightsToSave.add(buildProfileWeight(member, metaTag, weightProps.getProfileInitialScore())));
         }
 
         // DB 부하를 줄이고 트랜잭션 안전성을 위해 saveAll로 일괄 저장
@@ -177,51 +177,69 @@ public class MemberTagWeightService {
         }
     }
 
-    //변동값을 적용한다
-    private void applyBaseDelta(Member member, MetaTagEntity metaTag, int delta) {
+    // 프로필 점수만 반영한다 (decay 대상 아님)
+    private void applyProfileDelta(Member member, MetaTagEntity metaTag, int delta) {
         if (delta <= 0) {
             return;
         }
         memberTagWeightRepository.findByMember_IdAndMetaTag_Id(member.getId(), metaTag.getId())
                 .ifPresentOrElse(
                         weight -> {
-                            weight.adjustWeightScore(delta);
+                            weight.adjustProfileScore(delta);
                             memberTagWeightRepository.save(weight);
                         },
-                        () -> memberTagWeightRepository.save(buildWeight(member, metaTag, delta))
+                        () -> memberTagWeightRepository.save(buildProfileWeight(member, metaTag, delta))
                 );
     }
 
-    //최종값이 0 이하라면 row 제거 처리를 한다 - DB 용량 관리를 위함
-    private void adjustOrDelete(MemberTagWeight weight, int delta) {
-        weight.adjustWeightScore(delta);
-        if (weight.getWeightScore() <= 0) {
+    private void adjustProfileOrDelete(MemberTagWeight weight, int delta) {
+        weight.adjustProfileScore(delta);
+        if (weight.hasNoScore()) {
             memberTagWeightRepository.delete(weight);
             return;
         }
         memberTagWeightRepository.save(weight);
     }
 
-    //MemberTagWeight 업데이트
-    private MemberTagWeight buildWeight(Member member, MetaTagEntity metaTag, int score) {
+    private void adjustBehaviorOrDelete(MemberTagWeight weight, int delta) {
+        weight.adjustWeightScore(delta);
+        if (weight.hasNoScore()) {
+            memberTagWeightRepository.delete(weight);
+            return;
+        }
+        memberTagWeightRepository.save(weight);
+    }
+
+    private MemberTagWeight buildProfileWeight(Member member, MetaTagEntity metaTag, int profileScore) {
         return MemberTagWeight.builder()
                 .member(member)
                 .metaTag(metaTag)
-                .weightScore(score)
+                .profileScore(profileScore)
+                .weightScore(0)
+                .effectiveScore(0.0)
                 .build();
     }
 
-    //행동에 따른 score(delta) 추가
+    private MemberTagWeight buildBehaviorWeight(Member member, MetaTagEntity metaTag, int behaviorScore) {
+        return MemberTagWeight.builder()
+                .member(member)
+                .metaTag(metaTag)
+                .profileScore(0)
+                .weightScore(behaviorScore)
+                .effectiveScore((double) behaviorScore)
+                .build();
+    }
+
+    //행동에 따른 score(delta) 추가 — weight_score만 갱신 (updated_at·decay 대상)
     public void applyBehaviorScore(Member member, MetaTagEntity metaTag, int delta){
-        //값 변동이 없다면 의미없는 것으로 보고 return
         if (delta == 0) return;
         memberTagWeightRepository
                 .findByMember_IdAndMetaTag_Id(member.getId(), metaTag.getId())
                 .ifPresentOrElse(
-                        weight -> adjustOrDelete(weight, delta),
+                        weight -> adjustBehaviorOrDelete(weight, delta),
                         () -> {
-                            if(delta > 0) {
-                                memberTagWeightRepository.save(buildWeight(member, metaTag, delta));
+                            if (delta > 0) {
+                                memberTagWeightRepository.save(buildBehaviorWeight(member, metaTag, delta));
                             }
                         }
                 );
