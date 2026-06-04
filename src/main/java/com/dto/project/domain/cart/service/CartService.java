@@ -1,6 +1,8 @@
 package com.dto.project.domain.cart.service;
 
 import com.dto.project.domain.cart.dto.CartAddRequest;
+import com.dto.project.domain.cart.dto.CartBulkAddRequest;
+import com.dto.project.domain.cart.dto.CartBulkDeleteRequest;
 import com.dto.project.domain.cart.dto.CartResponse;
 import com.dto.project.domain.cart.dto.CartUpdateRequest;
 import com.dto.project.domain.cart.entity.Cart;
@@ -83,5 +85,32 @@ public class CartService {
     // 장바구니 비우기
     public void clearCart(Long memberId) {
         cartRepository.deleteByMemberId(memberId);
+    }
+    
+    // 장바구니 다량 추가
+    @Transactional
+    public void addCarts(Long memberId, CartBulkAddRequest request) {
+        for (CartBulkAddRequest.CartAddItem item : request.getItems()) {
+            CartAddRequest addRequest = new CartAddRequest();
+            addRequest.setProductId(item.getProductId());
+            addRequest.setQuantity(item.getQuantity());
+
+            addCart(memberId, addRequest);
+        }
+    }
+    
+    // 장바구니 다량 삭제
+    @Transactional
+    public void deleteCarts(Long memberId, CartBulkDeleteRequest request) {
+        List<Cart> carts = cartRepository.findByIdInAndMemberId(
+                request.getCartIds(),
+                memberId
+        );
+
+        if (carts.size() != request.getCartIds().size()) {
+            throw new IllegalArgumentException("삭제할 수 없는 장바구니 상품이 포함되어 있습니다.");
+        }
+
+        cartRepository.deleteAll(carts);
     }
 }
