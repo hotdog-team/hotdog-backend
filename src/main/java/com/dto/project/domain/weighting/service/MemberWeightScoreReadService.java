@@ -37,14 +37,15 @@ public class MemberWeightScoreReadService {
                         w -> w
                 ));
 
-        List<MemberTagHotScore> memTagHotScores = memberTagWeightHotService.
-                getAllScore(memberId);
+        List<MemberTagHotScore> memTagHotScores = memberTagWeightHotService.getAllScore(memberId);
 
-        Map<Long, Integer> hotDeltaMap = memTagHotScores.stream()
-                .collect(Collectors.toMap(
-                        MemberTagHotScore::getMetaTagId,
-                        MemberTagHotScore::getHotDelta
-                ));
+        Map<Long, Integer> hotDeltaMap = memTagHotScores == null
+                ? Map.of()
+                : memTagHotScores.stream()
+                        .collect(Collectors.toMap(
+                                MemberTagHotScore::getMetaTagId,
+                                MemberTagHotScore::getHotDelta
+                        ));
 
         Set<Long> allTagIds = new HashSet<>(dbScoreMap.keySet());
         allTagIds.addAll(hotDeltaMap.keySet());
@@ -52,10 +53,10 @@ public class MemberWeightScoreReadService {
         Map<Long, Double> result = new HashMap<>();
         for (Long metaTagId : allTagIds) {
             MemberTagWeight db = dbScoreMap.get(metaTagId);
-            int dbScore = db != null ? db.getWeightScore() : 0;
+            double dbScore = resolveDbScore(db);
             int hotDelta = hotDeltaMap.getOrDefault(metaTagId, 0);
 
-            int weightScore = dbScore + hotDelta;
+            double weightScore = dbScore + hotDelta;
             if (weightScore <= 0) continue;
 
             MetaTagEntity metaTag;
@@ -83,6 +84,21 @@ public class MemberWeightScoreReadService {
         }
 
         return result;
+    }
+
+    // profile_score(비감쇠) + effective_score(행동 감쇠 결과, 없으면 weight_score)
+    private double resolveDbScore(MemberTagWeight db) {
+        if (db == null) return 0;
+        int profile = db.getProfileScore() != null ? db.getProfileScore() : 0;
+        double behavior;
+        if (db.getEffectiveScore() != null) {
+            behavior = db.getEffectiveScore();
+        } else if (db.getWeightScore() != null) {
+            behavior = db.getWeightScore();
+        } else {
+            behavior = 0;
+        }
+        return profile + behavior;
     }
 
 }

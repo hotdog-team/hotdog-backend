@@ -18,9 +18,9 @@ public interface MemberTagWeightRepository extends JpaRepository<MemberTagWeight
             SELECT mtw.metaTag.id FROM MemberTagWeight mtw
             WHERE mtw.member.id = :memberId
               AND mtw.metaTag.type IN :types
-              AND mtw.weightScore >= :minScore
+              AND mtw.profileScore >= :minScore
             """)
-    List<Long> findMetaTagIdsByMemberIdAndMetaTagTypeInAndWeightScoreGreaterThanEqual(
+    List<Long> findMetaTagIdsByMemberIdAndMetaTagTypeInAndProfileScoreGreaterThanEqual(
             @Param("memberId") Long memberId,
             @Param("types") Collection<MetaTagType> types,
             @Param("minScore") int minScore);
@@ -54,4 +54,9 @@ public interface MemberTagWeightRepository extends JpaRepository<MemberTagWeight
            WHERE mtw.member.id = :memberId
     """)
     List<MemberTagWeight> findAllByMemberIdWithMetaTag(@Param("memberId") Long memberId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE MemberTagWeight mtw SET mtw.effectiveScore = :effective WHERE mtw.id = :id")
+    void updateEffectiveScore(@Param("id") Long id, @Param("effective") Double effective);
+
 }
