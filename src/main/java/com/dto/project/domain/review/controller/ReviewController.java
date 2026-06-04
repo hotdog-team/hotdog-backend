@@ -5,6 +5,9 @@ import com.dto.project.domain.review.dto.ReviewResponse;
 import com.dto.project.domain.review.dto.ReviewUpdateRequest;
 import com.dto.project.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,8 +22,11 @@ public class ReviewController {
 
     // 상품 리뷰 목록 조회
     @GetMapping("/products/{productId}/reviews")
-    public List<ReviewResponse> getProductReviews(@PathVariable Long productId) {
-        return reviewService.getProductReviews(productId);
+    public Page<ReviewResponse> getProductReviews(
+            @PathVariable Long productId,
+            Pageable pageable
+    ) {
+        return reviewService.getProductReviews(productId, pageable);
     }
 
     // 리뷰 작성
@@ -36,8 +42,11 @@ public class ReviewController {
 
     // 내 리뷰 조회
     @GetMapping("/reviews/my")
-    public List<ReviewResponse> getMyReviews(@RequestParam Long memberId) {
-        return reviewService.getMyReviews(memberId);
+    public Page<ReviewResponse> getMyReviews(
+            @RequestParam Long memberId,
+            Pageable pageable
+    ) {
+        return reviewService.getMyReviews(memberId, pageable);
     }
 
     // 리뷰 수정
