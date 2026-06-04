@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -59,4 +60,7 @@ public interface MemberTagWeightRepository extends JpaRepository<MemberTagWeight
     @Query("UPDATE MemberTagWeight mtw SET mtw.effectiveScore = :effective WHERE mtw.id = :id")
     void updateEffectiveScore(@Param("id") Long id, @Param("effective") Double effective);
 
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE MemberTagWeight mtw SET mtw.updatedAt = :updatedAt WHERE mtw.id = :id")
+    void touchUpdatedAt(@Param("id") Long id, @Param("updatedAt") LocalDateTime updatedAt);
 }
