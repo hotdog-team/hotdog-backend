@@ -68,6 +68,11 @@ public class JwtProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         String role = claims.get("role") != null ? claims.get("role").toString() : "ROLE_USER";
-        return new UsernamePasswordAuthenticationToken(claims.getSubject(), "", Collections.singletonList(new SimpleGrantedAuthority(role)));
+
+        Object memberIdObj = claims.get("memberId");
+
+        String principal = (memberIdObj != null) ? memberIdObj.toString() : claims.getSubject();
+
+        return new UsernamePasswordAuthenticationToken(principal, "", Collections.singletonList(new SimpleGrantedAuthority(role)));
     }
 }
