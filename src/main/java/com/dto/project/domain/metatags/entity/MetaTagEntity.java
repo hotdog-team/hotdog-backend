@@ -21,6 +21,7 @@ public class MetaTagEntity {
     @Enumerated(EnumType.STRING)
     private MetaTagType type;
     @Enumerated(EnumType.STRING)
+    @Column(name="status")
     private MetaTagStatus metaTagStatus;
     @Column(name="created_at")
     private LocalDateTime createdAt;
