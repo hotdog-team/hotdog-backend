@@ -82,6 +82,11 @@ public class Product {
         this.status = status;
         this.updatedAt = LocalDateTime.now();
     }
+    
+    // 비즈니스 로직 (재고 복구)
+    public void increaseStock(int quantity) {
+        this.stockQuantity += quantity;
+    }
 
 
     public void updateProductInfo(

@@ -193,10 +193,24 @@ public CheckoutResponse createDirectCheckout(CheckoutRequest request, Member mem
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, DefaultErrorDetailMessages.NOT_FOUND));
     }
 
-    // 주문 취소 로직
+    // 주문 취소
     @Transactional
     public void cancelOrder(Long orderId) {
+
         Order order = getOrderDetail(orderId);
+
+        // 주문 상품 재고 복구
+        for (OrderItem orderItem : order.getOrderItems()) {
+
+            // 외부 상품은 재고 복구 제외
+            if (orderItem.getProduct() == null) {
+                continue;
+            }
+
+            orderItem.getProduct().increaseStock(orderItem.getQuantity());
+        }
+
+        // 주문 상태 취소
         order.cancel();
     }
 }

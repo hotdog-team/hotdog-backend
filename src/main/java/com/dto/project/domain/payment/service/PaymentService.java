@@ -3,6 +3,7 @@ package com.dto.project.domain.payment.service;
 import com.dto.project.domain.cart.repository.CartRepository;
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.order.entity.Order;
+import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.order.repository.OrderRepository;
 import com.dto.project.domain.payment.entity.Payment;
 import com.dto.project.domain.payment.repository.PaymentRepository;
@@ -40,6 +41,8 @@ public class PaymentService {
             TossPaymentResponse tossResponse = tossPaymentClient.confirmPayment(tossRequest);
 
             // 2. 승인 성공 시 상태 변경 및 기록
+            decreaseStock(order);
+            
             order.updateStatus("COMPLETED");
             savePaymentInfo(order, request, "COMPLETED");
 
@@ -65,5 +68,18 @@ public class PaymentService {
                 .approvedAt(status.equals("COMPLETED") ? LocalDateTime.now() : null)
                 .build();
         paymentRepository.save(payment);
+    }
+    
+ // 결제 성공 시 주문 상품 재고 차감
+    private void decreaseStock(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+
+            // 외부 상품 또는 상품 정보가 없는 경우 재고 차감 제외
+            if (orderItem.getProduct() == null) {
+                continue;
+            }
+
+            orderItem.getProduct().decreaseStock(orderItem.getQuantity());
+        }
     }
 }
