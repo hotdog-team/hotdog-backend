@@ -46,7 +46,7 @@ public class MemberService {
                             .isDefault(true)
                             .build());
 
-            address.updateAddress(request.getZipCode(), request.getBaseAddress(), request.getDetailAddress());
+            address.updateAddress(request.getZipCode(), request.getBaseAddress(), request.getDetailAddress(), null, null);
             addressRepository.save(address);
         }
 

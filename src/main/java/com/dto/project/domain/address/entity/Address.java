@@ -55,10 +55,12 @@ public class Address extends BaseTimeEntity { // 생성/수정 시간 상속
     /**
      * 주소 정보 업데이트
      */
-    public void updateAddress(String zipCode, String baseAddress, String detailAddress) {
+    public void updateAddress(String zipCode, String baseAddress, String detailAddress, String receiverName, String receiverPhone) {
         if (zipCode != null) this.zipCode = zipCode;
         if (baseAddress != null) this.baseAddress = baseAddress;
         if (detailAddress != null) this.detailAddress = detailAddress;
+        if (receiverName != null) this.receiverName = receiverName;
+        if (receiverPhone != null) this.receiverPhone = receiverPhone;
     }
 
     /**
@@ -66,5 +68,11 @@ public class Address extends BaseTimeEntity { // 생성/수정 시간 상속
      */
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
+    }
+    
+    // 배송지 삭제 (Soft Delete)
+    public void deleteAddress() {
+        this.status = "DELETED";
+        this.isDefault = false;
     }
 }
