@@ -13,7 +13,7 @@ public class ProductWeightLogResponse {
     private Long memberId;
     private Long productId;
     private WeightLogType actionType;
-    private Integer appliedWeight;
+    private Double appliedWeight;
     private Long referenceId;
     private LocalDateTime eventTimeStamp;
     private LocalDateTime createdAt;

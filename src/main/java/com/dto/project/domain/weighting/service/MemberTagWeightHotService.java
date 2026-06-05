@@ -28,11 +28,11 @@ public class MemberTagWeightHotService {
     private final MemberTagWeightService memberTagWeightService;
     private final StringRedisTemplate redisTemplate;
 
-    public void increaseFromProduct(Long memberId, Long productId, int delta) {
+    public void increaseFromProduct(Long memberId, Long productId, double delta) {
         applyDeltaFromProduct(memberId, productId, delta);
     }
 
-    public void decreaseFromProduct(Long memberId, Long productId, int delta) {
+    public void decreaseFromProduct(Long memberId, Long productId, double delta) {
         if (!redisTemplate.hasKey(hotKey(memberId))) return;
         applyDeltaFromProduct(memberId, productId, -delta);
     }
@@ -46,7 +46,7 @@ public class MemberTagWeightHotService {
         List<MemberTagHotScore> result = new ArrayList<>();
         for (Map.Entry<Object, Object> entry : entries.entrySet()){
             Long metaTagId = Long.parseLong((String)entry.getKey());
-            int delta = Integer.parseInt((String)entry.getValue());
+            double delta = Double.parseDouble((String) entry.getValue());
             if (delta == 0) continue;
 
             result.add(MemberTagHotScore.builder()
@@ -74,7 +74,7 @@ public class MemberTagWeightHotService {
             Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
             for (Map.Entry<Object, Object> entry : entries.entrySet()) {
                 Long metaTagId = Long.parseLong((String) entry.getKey());
-                int delta = Integer.parseInt((String) entry.getValue());
+                double delta = Double.parseDouble((String) entry.getValue());
                 if (delta == 0) {
                     continue;
                 }
@@ -86,7 +86,7 @@ public class MemberTagWeightHotService {
     }
 
     //apply로 메서드를 분리처리한다
-    private void applyDeltaFromProduct(Long memberId, Long productId, int delta) {
+    private void applyDeltaFromProduct(Long memberId, Long productId, double delta) {
         if (delta == 0) return;
         List<MetaTagProduct> mappings = metaTagProductRepository.findByProduct_Id(productId);
         if (mappings.isEmpty()) return;

@@ -1,13 +1,17 @@
 package com.dto.project.domain.weighting.scheduler;
 
+import com.dto.project.domain.weighting.config.ViewRepeatScorePolicy;
 import com.dto.project.domain.weighting.service.MemberTagWeightDecayService;
 import com.dto.project.domain.weighting.service.MemberTagWeightHotService;
 import com.dto.project.domain.weighting.service.MemberTagWeightRefreshService;
 import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -17,6 +21,7 @@ public class ActionLogFlushScheduler {
     //1 트랜잭션 = 500건으로 설정(팀내 policy 의거)
     private static final int MAX_PER_RUN = 500;
 
+    private final StringRedisTemplate redisTemplate;
     private final MemberTagWeightHotService memberTagWeightHotService;
     private final ProductWeightLogService productWeightLogService;
     private final MemberTagWeightDecayService memberTagWeightDecayService;
@@ -45,6 +50,11 @@ public class ActionLogFlushScheduler {
 
         //hot 데이터 DB에 등록
         memberTagWeightHotService.mergeHotToMemberTagWeights();
+        
+        //view Repeat key 제거
+        Set<String> keys = redisTemplate.keys(ViewRepeatScorePolicy.REDIS_KEY_PREFIX + "*");
+        if (!keys.isEmpty()) redisTemplate.delete(keys);
+        
         memberTagWeightRefreshService.applyUplift();
         memberTagWeightDecayService.applyDecayFromUpdatedAt();
 
@@ -56,4 +66,6 @@ public class ActionLogFlushScheduler {
     public void bookmarkPendingFlush() {
         productWeightLogService.confirmBookmarkPending();
     }
+    
+    
 }

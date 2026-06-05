@@ -26,7 +26,7 @@ public class ProductWeightLog {
     @Enumerated(EnumType.STRING)
     private WeightLogType actionType;
     @Column(name="applied_weight")
-    private Integer appliedWeight;
+    private Double appliedWeight;
     @Column(name="reference_id")
     private Long referenceId;
     @Column(name="event_timestamp")

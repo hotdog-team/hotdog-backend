@@ -41,7 +41,7 @@ public class MemberWeightScoreReadService {
 
         List<MemberTagHotScore> memTagHotScores = memberTagWeightHotService.getAllScore(memberId);
 
-        Map<Long, Integer> hotDeltaMap = memTagHotScores == null
+        Map<Long, Double> hotDeltaMap = memTagHotScores == null
                 ? Map.of()
                 : memTagHotScores.stream()
                         .collect(Collectors.toMap(
@@ -75,7 +75,7 @@ public class MemberWeightScoreReadService {
             }
 
             double dbScore = resolveDbScore(db);
-            int hotDelta = hotDeltaMap.getOrDefault(metaTagId, 0);
+            double hotDelta = hotDeltaMap.getOrDefault(metaTagId, 0.0);
 
             double weightScore = dbScore + hotDelta;
             if (weightScore <= 0) continue;

@@ -18,7 +18,7 @@ import java.util.Map;
 public class WeightingProperties {
 
     //로그 점수 및 계수 저장
-    private Map<WeightLogType, Integer> actionWeight = new EnumMap<>(WeightLogType.class);
+    private Map<WeightLogType, Double> actionWeight = new EnumMap<>(WeightLogType.class);
     private Map<MetaTagType, Double>   metaTagCoefficient  = new EnumMap<>(MetaTagType.class);
 
     private double occupationBonus;

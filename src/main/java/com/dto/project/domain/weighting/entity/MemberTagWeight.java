@@ -34,7 +34,7 @@ public class MemberTagWeight {
     private Integer profileScore;
 
     @Column(name = "weight_score", nullable = false)
-    private Integer weightScore;
+    private Double weightScore;
 
     @Column(name = "effective_score", nullable = false)
     private Double effectiveScore;
@@ -49,15 +49,15 @@ public class MemberTagWeight {
         this.profileScore = current + delta;
     }
 
-    public void adjustWeightScore(int delta) {
-        int current = this.weightScore != null ? this.weightScore : 0;
+    public void adjustWeightScore(double delta) {
+        double current = this.weightScore != null ? this.weightScore : 0;
         this.weightScore = current + delta;
     }
 
     //행동 점수 0점 처리
     public boolean hasNoScore() {
         int profile = this.profileScore != null ? this.profileScore : 0;
-        int weight = this.weightScore != null ? this.weightScore : 0;
+        double weight = this.weightScore != null ? this.weightScore : 0;
         return profile <= 0 && weight <= 0;
     }
 }
