@@ -60,4 +60,10 @@ public class MemberTagWeight {
         int weight = this.weightScore != null ? this.weightScore : 0;
         return profile <= 0 && weight <= 0;
     }
+
+    //Setter
+    public void clearBehavior() {
+        this.weightScore = 0;
+        this.effectiveScore = 0.0;
+    }
 }

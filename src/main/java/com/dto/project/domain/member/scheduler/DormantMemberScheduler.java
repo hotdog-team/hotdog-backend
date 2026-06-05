@@ -1,6 +1,9 @@
 package com.dto.project.domain.member.scheduler;
 
+import com.dto.project.domain.member.entity.Member;
+import com.dto.project.domain.member.entity.MemberStatus;
 import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.domain.weighting.service.MemberTagWeightService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -8,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -15,6 +19,7 @@ import java.time.LocalDateTime;
 public class DormantMemberScheduler {
 
     private final MemberRepository memberRepository;
+    private final MemberTagWeightService memberTagWeightService;
 
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
@@ -23,7 +28,15 @@ public class DormantMemberScheduler {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneYearAgo = now.minusYears(1);
-        LocalDateTime oneAndHalfYearsAgo = now.minusMonths(18);
+
+        // 휴면 상태 전인 Member 가져오기(휴면 상태 처리 직전)
+        List<Member> targets = memberRepository
+                .findAllByStatusAndLastLoginAtBefore(MemberStatus.ACTIVE, oneYearAgo);
+
+        // 먼저 memberTagWeightService에 있는 내용을 삭제한다
+        for (Member member : targets) {
+            memberTagWeightService.clearBehaviorOnDormant(member);
+        }
 
         // 1년 미접속 회원 -> 휴면(DORMANT) 상태로 변경
         int updatedDormantCount = memberRepository.updateDormantMembers(oneYearAgo);

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
@@ -24,6 +25,10 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Modifying
     @Query("UPDATE Member m SET m.status = 'DORMANT' WHERE m.status = 'ACTIVE' AND m.lastLoginAt < :oneYearAgo")
     int updateDormantMembers(@Param("oneYearAgo") LocalDateTime oneYearAgo);
+
+    // 1년 이상 미접속한 유저의 목록을 불러오기
+    List<Member> findAllByStatusAndLastLoginAtBefore(MemberStatus status, LocalDateTime lastLoginBefore);
+
 
      //[관리자용] 동적 검색 및 필터링 쿼리
     @Query("SELECT m FROM Member m WHERE " +
