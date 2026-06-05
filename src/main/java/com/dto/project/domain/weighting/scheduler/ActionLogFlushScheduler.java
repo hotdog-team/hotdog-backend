@@ -1,6 +1,7 @@
 package com.dto.project.domain.weighting.scheduler;
 
 import com.dto.project.domain.weighting.config.ViewRepeatScorePolicy;
+import com.dto.project.domain.metatags.service.ProductMetaTagAutoService;
 import com.dto.project.domain.weighting.service.MemberTagWeightDecayService;
 import com.dto.project.domain.weighting.service.MemberTagWeightHotService;
 import com.dto.project.domain.weighting.service.MemberTagWeightRefreshService;
@@ -26,6 +27,7 @@ public class ActionLogFlushScheduler {
     private final ProductWeightLogService productWeightLogService;
     private final MemberTagWeightDecayService memberTagWeightDecayService;
     private final MemberTagWeightRefreshService memberTagWeightRefreshService;
+    private final ProductMetaTagAutoService productMetaTagAutoService;
 
     //매일 새벽 2시에 일괄 등록(batch)하도록 처리(팀내 policy에 의거)
     @Scheduled(cron = "0 0 2 * * *")
@@ -59,6 +61,8 @@ public class ActionLogFlushScheduler {
         memberTagWeightDecayService.applyDecayFromUpdatedAt();
 
         log.info("행동 등록 완료: 총 {}건", totalBehavior + totalCart);
+
+        productMetaTagAutoService.syncAllAutoTags();
     }
 
     //1분 후 bookmark 등록
