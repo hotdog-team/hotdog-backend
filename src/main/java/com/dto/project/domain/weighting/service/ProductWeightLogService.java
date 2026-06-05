@@ -119,7 +119,7 @@ public class ProductWeightLogService {
         if (action == WeightLogType.VIEW) {
             weight = resolveViewAppliedWeight(memberId, productId);
         }
-        if (weight <= 0) return;
+        if (weight == 0) return;
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -139,8 +139,14 @@ public class ProductWeightLogService {
             return;
         }
 
-        //점수 Redis 처리
-        memberTagWeightHotService.increaseFromProduct(memberId, productId, weight);
+        if (action == WeightLogType.DISLIKE) {
+            long expiresAt = System.currentTimeMillis() + Duration.ofDays(30).toMillis();
+            redisTemplate.opsForZSet().add("dislike:hide:" + memberId, String.valueOf(productId), expiresAt);
+            memberTagWeightHotService.applyDislikeFromProduct(memberId, productId);
+        } else {
+            //점수 Redis 처리
+            memberTagWeightHotService.increaseFromProduct(memberId, productId, weight);
+        }
 
         //try-catch문을 이쪽에서 실행시킵니다
         //json처리
@@ -341,28 +347,25 @@ public class ProductWeightLogService {
         });
     }
 
-    //VIEW | CART | BOOKMARK인지 확인한다(true/false)
+    //VIEW | CART | BOOKMARK | DISLIKE인지 확인한다(true/false)
     private boolean consumesHotBuffer(WeightLogType action) {
         return action == WeightLogType.VIEW
                 || action == WeightLogType.CART
-                || action == WeightLogType.BOOKMARK;
+                || action == WeightLogType.BOOKMARK
+                || action == WeightLogType.DISLIKE;
     }
 
     //중복 건너뛸 때 hot에서 제거한다(decrease)
     private void releaseHotBuffer(ProductWeightLog log) {
         Double weight = log.getAppliedWeight();
-        if (weight == null) {
-            return;
-        }
+        if (weight == null) return;
         memberTagWeightHotService.decreaseFromProduct(log.getMemberId(), log.getProductId(), weight);
     }
 
     //취소 시 hot 버퍼가 남아 있으면 회수 (merge 후에는 hot 키 없음 → skip)
     private void releaseHotBeforeCancel(Long memberId, Long productId, WeightLogType referredAction) {
         Double weight = weightProps.getActionWeight().get(referredAction);
-        if (weight == null || weight == 0) {
-            return;
-        }
+        if (weight == null || weight == 0) return;
         memberTagWeightHotService.decreaseFromProduct(memberId, productId, weight);
     }
 

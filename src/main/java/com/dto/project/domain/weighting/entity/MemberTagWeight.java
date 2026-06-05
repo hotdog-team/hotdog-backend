@@ -63,7 +63,7 @@ public class MemberTagWeight {
 
     //Setter
     public void clearBehavior() {
-        this.weightScore = 0;
+        this.weightScore = 0.0;
         this.effectiveScore = 0.0;
     }
 }

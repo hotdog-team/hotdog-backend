@@ -33,6 +33,7 @@ public class MetaTagWeightLogService {
         if (mappings.isEmpty()) return;
 
         Double configured = weightProps.getActionWeight().get(productLog.getActionType());
+
         double appliedWeight = productLog.getAppliedWeight() != null
                 ? productLog.getAppliedWeight()
                 : (configured != null ? configured : 0);
@@ -42,16 +43,19 @@ public class MetaTagWeightLogService {
         LocalDateTime createdAt = LocalDateTime.now();
 
         List<MetaTagWeightLog> logs = new ArrayList<>();
-        for (MetaTagProduct mapping : mappings) {
-            Long metaTagId = mapping.getMetaTag().getId();
+        for (MetaTagProduct m : mappings) {
+            Long metaTagId = m.getMetaTag().getId();
             Long referenceId = resolveReferenceId(memberId, metaTagId, productLog);
             if (referenceId == null) continue;
+
+            double tagWeight = resolveTagWeight(productLog, m, appliedWeight);
+            if (tagWeight == 0) continue;
 
             logs.add(MetaTagWeightLog.builder()
                     .memberId(memberId)
                     .metaTagId(metaTagId)
                     .actionType(actionType)
-                    .appliedWeight(appliedWeight)
+                    .appliedWeight(tagWeight)
                     .referenceId(referenceId)
                     .eventTimeStamp(eventTimeStamp)
                     .createdAt(createdAt)
@@ -61,13 +65,13 @@ public class MetaTagWeightLogService {
         if (logs.isEmpty()) return;
         metaTagWeightLogRepository.saveAll(logs);
 
-        if (!applyScore || appliedWeight == 0) {
-            return;
-        }
+        if (!applyScore || appliedWeight == 0) return;
 
         memberRepository.findById(memberId).ifPresent(member -> {
             for (MetaTagProduct m : mappings) {
-                memberTagWeightService.applyBehaviorScore(member, m.getMetaTag(), appliedWeight);
+                double tagWeight = resolveTagWeight(productLog, m, appliedWeight);
+                if (tagWeight == 0) continue;
+                memberTagWeightService.applyBehaviorScore(member, m.getMetaTag(), tagWeight);
             }
         });
     }
@@ -96,5 +100,18 @@ public class MetaTagWeightLogService {
             case CANCEL_BOOKMARK -> WeightLogType.BOOKMARK;
             default -> null;
         };
+    }
+
+    // DISLIKE 메타태그 계수 적용 메서드 분리
+    private double resolveTagWeight(ProductWeightLog productLog, MetaTagProduct mapping, double defaultWeight) {
+        if (productLog.getActionType() != WeightLogType.DISLIKE) {
+            return defaultWeight;
+        }
+        Double dislikeBase = weightProps.getActionWeight().get(WeightLogType.DISLIKE);
+        Double coefficient = weightProps.getDislikeCoefficient().get(mapping.getMetaTag().getType());
+        if (dislikeBase == null || coefficient == null || coefficient == 0) {
+            return 0;
+        }
+        return dislikeBase * coefficient;
     }
 }
