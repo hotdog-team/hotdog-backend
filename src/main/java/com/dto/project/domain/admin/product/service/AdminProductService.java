@@ -44,7 +44,7 @@ public class AdminProductService {
         product.setOrigin(request.getOrigin());
         product.setSpecInfo(request.getSpecInfo());
         product.setAltText(request.getAltText());
-        product.setWeightScore(0);
+        product.setWeightScore(0.0);
 
         product.setStatus("ON_SALE");
         product.setCreatedAt(LocalDateTime.now());

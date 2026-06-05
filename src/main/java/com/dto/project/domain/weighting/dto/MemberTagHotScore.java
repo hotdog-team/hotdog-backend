@@ -10,7 +10,7 @@ public class MemberTagHotScore {
     private Long metaTagId;
     private MetaTagType type;
     private int dbScore;
-    private int hotDelta;
+    private double hotDelta;
     private int weightScore;
     //최종 적용 점수
     private double finalScore;

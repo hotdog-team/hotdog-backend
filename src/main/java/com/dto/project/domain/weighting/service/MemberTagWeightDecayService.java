@@ -20,7 +20,7 @@ public class MemberTagWeightDecayService {
     public void applyDecayFromUpdatedAt(){
         List<MemberTagWeight> weights = memberTagWeightRepository.findAll();
         for (MemberTagWeight weight:weights){
-            int weightScore = weight.getWeightScore();
+            double weightScore = weight.getWeightScore() != null ? weight.getWeightScore() : 0;
             LocalDateTime updatedAt = weight.getUpdatedAt();
             if (updatedAt == null) continue;
 

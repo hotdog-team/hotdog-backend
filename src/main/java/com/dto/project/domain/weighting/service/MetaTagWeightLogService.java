@@ -32,8 +32,10 @@ public class MetaTagWeightLogService {
         List<MetaTagProduct> mappings = metaTagProductRepository.findByProduct_Id(productLog.getProductId());
         if (mappings.isEmpty()) return;
 
-        Integer weight = weightProps.getActionWeight().get(productLog.getActionType());
-        int appliedWeight = weight != null ? weight : 0;
+        Double configured = weightProps.getActionWeight().get(productLog.getActionType());
+        double appliedWeight = productLog.getAppliedWeight() != null
+                ? productLog.getAppliedWeight()
+                : (configured != null ? configured : 0);
         Long memberId = productLog.getMemberId();
         WeightLogType actionType = productLog.getActionType();
         LocalDateTime eventTimeStamp = productLog.getEventTimeStamp();
@@ -59,13 +61,13 @@ public class MetaTagWeightLogService {
         if (logs.isEmpty()) return;
         metaTagWeightLogRepository.saveAll(logs);
 
-        if (!applyScore || weight == null) {
+        if (!applyScore || appliedWeight == 0) {
             return;
         }
 
         memberRepository.findById(memberId).ifPresent(member -> {
             for (MetaTagProduct m : mappings) {
-                memberTagWeightService.applyBehaviorScore(member, m.getMetaTag(), weight);
+                memberTagWeightService.applyBehaviorScore(member, m.getMetaTag(), appliedWeight);
             }
         });
     }

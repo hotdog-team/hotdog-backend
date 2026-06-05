@@ -22,7 +22,7 @@ public class ProductResponse {
     private String origin;
     private String specInfo;
     private String altText;
-    private Integer weightScore;
+    private Double weightScore;
     private String status;
 
     public ProductResponse(Product product) {

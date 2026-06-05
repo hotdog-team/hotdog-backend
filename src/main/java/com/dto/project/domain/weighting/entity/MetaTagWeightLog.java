@@ -26,7 +26,7 @@ public class MetaTagWeightLog {
     @Enumerated(EnumType.STRING)
     private WeightLogType actionType;
     @Column(name="applied_weight")
-    private int appliedWeight;
+    private double appliedWeight;
     @Column(name="reference_id")
     private Long referenceId;
     @Column(name="event_timestamp")

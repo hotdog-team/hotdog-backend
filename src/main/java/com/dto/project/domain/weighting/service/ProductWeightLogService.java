@@ -1,6 +1,7 @@
 package com.dto.project.domain.weighting.service;
 
 import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.weighting.config.ViewRepeatScorePolicy;
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import com.dto.project.domain.weighting.dto.ProductWeightLogRequest;
 import com.dto.project.domain.weighting.entity.ProductWeightLog;
@@ -111,10 +112,15 @@ public class ProductWeightLogService {
             return;
         }
 
-        Integer weight = weightProps.getActionWeight().get(action);
-        if (weight == null) {
-            return;
+        Double configured = weightProps.getActionWeight().get(action);
+        double weight = configured != null ? configured : 0;
+
+        //VIEW라면 재행동을 고려한 로직 설정
+        if (action == WeightLogType.VIEW) {
+            weight = resolveViewAppliedWeight(memberId, productId);
         }
+        if (weight <= 0) return;
+
         LocalDateTime now = LocalDateTime.now();
 
         ProductWeightLog log = ProductWeightLog.builder()
@@ -216,8 +222,8 @@ public class ProductWeightLogService {
             String[] parts = member.split(":");
             Long memberId = Long.parseLong(parts[0]);
             Long productId = Long.parseLong(parts[1]);
-            Integer weight = weightProps.getActionWeight().get(WeightLogType.BOOKMARK);
-            if (weight == null) {
+            Double weight = weightProps.getActionWeight().get(WeightLogType.BOOKMARK);
+            if (weight == null || weight == 0) {
                 continue;
             }
 
@@ -326,7 +332,7 @@ public class ProductWeightLogService {
 
     //ProductWeight를 반영한다
     private void applyProductWeightOnPersist(ProductWeightLog log) {
-        Integer weight = log.getAppliedWeight();
+        Double weight = log.getAppliedWeight();
         if (weight == null || weight == 0) return;
 
         productRepository.findById(log.getProductId()).ifPresent(product -> {
@@ -344,7 +350,7 @@ public class ProductWeightLogService {
 
     //중복 건너뛸 때 hot에서 제거한다(decrease)
     private void releaseHotBuffer(ProductWeightLog log) {
-        Integer weight = log.getAppliedWeight();
+        Double weight = log.getAppliedWeight();
         if (weight == null) {
             return;
         }
@@ -353,7 +359,10 @@ public class ProductWeightLogService {
 
     //취소 시 hot 버퍼가 남아 있으면 회수 (merge 후에는 hot 키 없음 → skip)
     private void releaseHotBeforeCancel(Long memberId, Long productId, WeightLogType referredAction) {
-        Integer weight = weightProps.getActionWeight().get(referredAction);
+        Double weight = weightProps.getActionWeight().get(referredAction);
+        if (weight == null || weight == 0) {
+            return;
+        }
         memberTagWeightHotService.decreaseFromProduct(memberId, productId, weight);
     }
 
@@ -379,5 +388,13 @@ public class ProductWeightLogService {
                 })
                 .orElse(false);
     }
-    
+
+    private double resolveViewAppliedWeight(Long memberId, Long productId) {
+        String key = ViewRepeatScorePolicy.redisKey(memberId, productId);
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count == null || count <= 0) {
+            return 0.0;
+        }
+        return ViewRepeatScorePolicy.pointsForCount(count);
+    }
 }

@@ -52,7 +52,7 @@ public class Product {
     private String altText;
 
     @Column(name = "weight_score")
-    private Integer weightScore;
+    private Double weightScore;
 
     private String status;
 
@@ -63,8 +63,8 @@ public class Product {
     private LocalDateTime updatedAt;
 
     // WeightScore 적용
-    public void adjustWeightScore(int delta) {
-        int current = this.weightScore != null ? this.weightScore : 0;
+    public void adjustWeightScore(double delta) {
+        double current = this.weightScore != null ? this.weightScore : 0;
         this.weightScore = Math.max(0, current + delta);
         this.updatedAt = LocalDateTime.now();
     }

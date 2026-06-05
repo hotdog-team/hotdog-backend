@@ -201,7 +201,7 @@ public class MemberTagWeightService {
         memberTagWeightRepository.save(weight);
     }
 
-    private void adjustBehaviorOrDelete(MemberTagWeight weight, int delta) {
+    private void adjustBehaviorOrDelete(MemberTagWeight weight, double delta) {
         weight.adjustWeightScore(delta);
         if (weight.hasNoScore()) {
             memberTagWeightRepository.delete(weight);
@@ -215,23 +215,23 @@ public class MemberTagWeightService {
                 .member(member)
                 .metaTag(metaTag)
                 .profileScore(profileScore)
-                .weightScore(0)
+                .weightScore(0.0)
                 .effectiveScore(0.0)
                 .build();
     }
 
-    private MemberTagWeight buildBehaviorWeight(Member member, MetaTagEntity metaTag, int behaviorScore) {
+    private MemberTagWeight buildBehaviorWeight(Member member, MetaTagEntity metaTag, double behaviorScore) {
         return MemberTagWeight.builder()
                 .member(member)
                 .metaTag(metaTag)
                 .profileScore(0)
                 .weightScore(behaviorScore)
-                .effectiveScore((double) behaviorScore)
+                .effectiveScore(behaviorScore)
                 .build();
     }
 
     //행동에 따른 score(delta) 추가 — weight_score만 갱신 (updated_at·decay 대상)
-    public void applyBehaviorScore(Member member, MetaTagEntity metaTag, int delta){
+    public void applyBehaviorScore(Member member, MetaTagEntity metaTag, double delta) {
         if (delta == 0) return;
         memberTagWeightRepository
                 .findByMember_IdAndMetaTag_Id(member.getId(), metaTag.getId())
