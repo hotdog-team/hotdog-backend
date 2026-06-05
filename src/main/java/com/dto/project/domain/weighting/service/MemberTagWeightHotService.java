@@ -2,10 +2,13 @@ package com.dto.project.domain.weighting.service;
 
 import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.repository.MemberRepository;
+import com.dto.project.domain.metatags.entity.MetaTagEntity;
 import com.dto.project.domain.metatags.entity.MetaTagProduct;
 import com.dto.project.domain.metatags.repository.MetaTagProductRepository;
 import com.dto.project.domain.metatags.repository.MetaTagRepository;
+import com.dto.project.domain.weighting.config.WeightingProperties;
 import com.dto.project.domain.weighting.dto.MemberTagHotScore;
+import com.dto.project.domain.weighting.entity.WeightLogType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class MemberTagWeightHotService {
     private final MetaTagProductRepository metaTagProductRepository;
     private final MetaTagRepository metaTagRepository;
     private final MemberRepository memberRepository;
+    private final WeightingProperties weightProps;
     private final MemberTagWeightService memberTagWeightService;
     private final StringRedisTemplate redisTemplate;
 
@@ -99,6 +103,27 @@ public class MemberTagWeightHotService {
 
     private static String hotKey(Long memberId) {
         return HOT_KEY_PREFIX + memberId;
+    }
+
+    //다시 보지 않기(dislike 적용)
+    public void applyDislikeFromProduct(Long memberId, Long productId) {
+        Double dislikeBase = weightProps.getActionWeight().get(WeightLogType.DISLIKE);
+        if (dislikeBase == null || dislikeBase == 0) return;
+
+        List<MetaTagProduct> mappings = metaTagProductRepository.findByProduct_Id(productId);
+        if (mappings.isEmpty()) return;
+
+        String key = hotKey(memberId);
+
+        for (MetaTagProduct mapping : mappings) {
+            MetaTagEntity metaTag = mapping.getMetaTag();
+            Double coefficient = weightProps.getDislikeCoefficient().get(metaTag.getType());
+            if (coefficient == null || coefficient == 0) continue;
+
+            double delta = dislikeBase * coefficient;
+
+            redisTemplate.opsForHash().increment(key, String.valueOf(metaTag.getId()), delta);
+        }
     }
 }
 

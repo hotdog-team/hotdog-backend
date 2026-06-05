@@ -10,12 +10,10 @@ import com.dto.project.domain.product.repository.ProductRepository;
 import com.dto.project.domain.weighting.service.MemberWeightScoreReadService;
 import com.dto.project.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,25 +24,38 @@ public class ProductServiceImpl implements ProductService {
     private final MetaTagProductRepository metaTagProductRepository;
     private final MemberWeightScoreReadService memberWeightScoreReadService;
     private final SecurityUtil securityUtil;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public List<ProductListResponse> getProductList(ProductSearchCondition condition) {
         ProductSort sort = ProductSort.fromJson(condition.getSort());
 
+        Long memberId = securityUtil.resolveMemberId();
+        List<Product> products = productRepository.searchProducts(condition);
+
+        // DISLIKE된 상품 숨김
+        if (!products.isEmpty()) {
+            Set<String> hidden = redisTemplate.opsForZSet()
+                    .rangeByScore("dislike:hide:" + memberId, System.currentTimeMillis(), Double.MAX_VALUE);
+            if (hidden != null && !hidden.isEmpty()) {
+                Set<Long> hiddenIds = hidden.stream().map(Long::parseLong).collect(Collectors.toSet());
+                products = products.stream()
+                        .filter(p -> !hiddenIds.contains(p.getId()))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            }
+        }
+
         //기본 정렬이 아니라면 searchProducts에서 처리합니다
+        //DISLIKE 처리로 수정
         if (sort != ProductSort.RECOMMEND) {
-            return productRepository.searchProducts(condition).stream()
-                    .sorted(Comparator.comparing(
-                            Product::getCreatedAt,
+            return products.stream()
+                    .sorted(Comparator.comparing(Product::getCreatedAt,
                             Comparator.nullsLast(Comparator.reverseOrder())))
                     .map(ProductListResponse::new)
                     .toList();
         }
 
-        Long memberId = securityUtil.resolveMemberId();
         Map<Long, Double> tagScoreMap = memberWeightScoreReadService.getEffectiveTagWeights(memberId);
-
-        List<Product> products = productRepository.searchProducts(condition);
         List<Long> productIds = products.stream().map(Product::getId).toList();
         List<MetaTagProduct> mappings = metaTagProductRepository.findAllByProductIdInWithMetaTag(productIds);
 
