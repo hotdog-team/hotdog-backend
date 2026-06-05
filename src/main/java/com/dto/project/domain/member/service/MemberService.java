@@ -32,8 +32,8 @@ public class MemberService {
 
     // 1. 회원 정보 및 취향 설정 변경
     @Transactional
-    public void updateProfile(String email, MemberUpdateRequest request) {
-        Member member = memberRepository.findByEmail(email)
+    public void updateProfile(Long memberId, MemberUpdateRequest request) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
         // 기본 인적사항(연락처 phone 추가됨) 업데이트
@@ -56,8 +56,8 @@ public class MemberService {
 
     // 2. 회원 탈퇴 처리
     @Transactional
-    public void withdraw(String email, String accessToken) {
-        Member member = memberRepository.findByEmail(email)
+    public void withdraw(Long memberId, String accessToken) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
         // 회원 테이블의 상태값을 WITHDRAWN으로 변경 (Soft Delete)
@@ -67,7 +67,7 @@ public class MemberService {
         memberTagWeightService.deleteAllForMember(member);
 
         // Redis 저장소의 세션 및 토큰 정보 즉시 파기
-        redisTemplate.delete("RT:" + email); // 리프레시 토큰 제거
+        redisTemplate.delete("RT:" + member.getEmail()); // 리프레시 토큰 제거
         if (accessToken != null) {
             // 기존 발급된 인증 토큰은 만료 전까지 재사용 불가능하도록 블랙리스트 등록 (유효시간 2시간 설정)
             redisTemplate.opsForValue().set(accessToken, "withdrawn", 2, TimeUnit.HOURS);
@@ -76,8 +76,8 @@ public class MemberService {
 
     // 3. 회원 정보 조회 (프로필 페이지용)
     @Transactional(readOnly = true)
-    public MemberResponse getProfile(String email) {
-        Member member = memberRepository.findByEmail(email)
+    public MemberResponse getProfile(Long memberId) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
 
         // 주소 조회
@@ -101,8 +101,8 @@ public class MemberService {
 
     // 4. 비밀번호 변경 로직
     @Transactional
-    public void updatePassword(String email, PasswordUpdateRequest request) {
-        Member member = memberRepository.findByEmail(email)
+    public void updatePassword(Long memberId, PasswordUpdateRequest request) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
         // 현재 비밀번호가 맞는지 검증
