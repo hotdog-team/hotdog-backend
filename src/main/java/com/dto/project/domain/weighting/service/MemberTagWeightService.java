@@ -245,4 +245,21 @@ public class MemberTagWeightService {
                 );
     }
 
+    // 휴면 회원 metaTagWeightScore 삭제(profile은 예외)
+    public void clearBehaviorOnDormant(Member member){
+        List<MemberTagWeight> weights =
+                memberTagWeightRepository.findAllByMemberIdWithMetaTag(member.getId());
+
+        for (MemberTagWeight weight : weights) {
+            int profileScore = weight.getProfileScore() != null ? weight.getProfileScore() : 0;
+
+            if(profileScore > 0) {
+                weight.clearBehavior();
+                memberTagWeightRepository.save(weight);
+            } else {
+                memberTagWeightRepository.delete(weight);
+            }
+        }
+    }
+
 }
