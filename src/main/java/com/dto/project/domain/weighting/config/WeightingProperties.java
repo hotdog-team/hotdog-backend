@@ -21,9 +21,9 @@ public class WeightingProperties {
     private Map<WeightLogType, Double> actionWeight = new EnumMap<>(WeightLogType.class);
     private Map<MetaTagType, Double> metaTagCoefficient  = new EnumMap<>(MetaTagType.class);
     private Map<MetaTagType, Double> dislikeCoefficient = new EnumMap<>(MetaTagType.class);
+    private Map<MetaTagType, Integer> productTagCap = new EnumMap<>(MetaTagType.class);
 
     private double occupationBonus;
-    private int productTagCap;
     private int profileInitialScore = 20;
     private int profileOccupationScore = 5;
     private int profileAgeScore = 5;
