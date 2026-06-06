@@ -12,6 +12,7 @@ import com.dto.project.domain.metatags.entity.MetaTagProduct;
 import com.dto.project.domain.metatags.entity.MetaTagStatus;
 import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import com.dto.project.domain.metatags.repository.MetaTagProductRepository;
+import com.dto.project.domain.metatags.service.ProductMetaTagAutoService;
 
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +33,15 @@ public class AdminProductService {
     private final MetaTagRepository metaTagRepository;
     private final WeightingProperties weightProps;
     private final CategoryRepository categoryRepository;
+    private final ProductMetaTagAutoService productMetaTagAutoService;
 
 
     private static final Set<MetaTagType> MANUAL_TYPES = EnumSet.of(
             MetaTagType.SEASONAL,
             MetaTagType.PURPOSE,
             MetaTagType.MERCHANDISING,
-            MetaTagType.OCCUPATION
+            MetaTagType.OCCUPATION,
+            MetaTagType.AGE_PREFERENCE
     );
 
     /**
@@ -98,6 +101,7 @@ public class AdminProductService {
         metaTagProductRepository.flush();
 
         saveMetaTags(product, request.getCategoryId(), request.getMetaTagIds());
+        productMetaTagAutoService.syncAutoTagsForProduct(productId);
     }
 
     /**
