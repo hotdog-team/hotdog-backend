@@ -89,4 +89,14 @@ public class Order {
     public void updateStatus(String statusStr) {
         this.status = OrderStatus.valueOf(statusStr);
     }
+    
+    // 관리자 배송 상태 변경
+    public void updateStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    // 관리자 운송장 번호 등록
+    public void updateTrackingNumber(String trackingNumber) {
+        this.trackingNumber = trackingNumber;
+    }
 }
