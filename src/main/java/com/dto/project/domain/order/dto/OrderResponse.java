@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @Getter
 public class OrderResponse {
     private Long orderId;
-    private String orderStatus;     // ORDERED, CANCELED, SHIPPED
+    private Long orderItemId;
+    private String orderStatus;     // ORDERED, CANCELLED, SHIPPED
     private int totalPrice;         // 총 결제 금액
     private LocalDateTime orderDate; // 주문 일시
 
