@@ -1,5 +1,7 @@
 package com.dto.project.domain.order.entity;
 
+import java.time.LocalDateTime;
+
 import com.dto.project.domain.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,8 +56,30 @@ public class OrderItem {
     @Column(name = "price_at_order", nullable = false)
     private int priceAtOrder;
 
+    // 주문 상품 상태
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderItemStatus status = OrderItemStatus.ORDERED;
+
+    // 주문 상품 취소 일시
+    private LocalDateTime cancelledAt;
+    
     // Order 엔티티의 연관관계 편의 메서드(addOrderItem)에서 사용하기 위한 Setter
     public void setOrder(Order order) {
         this.order = order;
+    }
+    
+    // 주문 상품 취소
+    public void cancel() {
+
+        // 이미 취소된 상품인지 검증
+        if (this.status == OrderItemStatus.CANCELLED) {
+            throw new IllegalStateException("이미 취소된 주문 상품입니다.");
+        }
+
+        this.status = OrderItemStatus.CANCELLED;
+
+        this.cancelledAt = LocalDateTime.now();
     }
 }
