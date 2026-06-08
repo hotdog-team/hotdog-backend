@@ -31,7 +31,7 @@ public class AdminDashboardService {
         return DashboardStatsResponse.builder()
                 .totalMembers(memberRepository.countByStatus(MemberStatus.ACTIVE))
                 .todayOrders(orderRepository.countByCreatedAtBetweenAndStatusNot(startOfDay, endOfDay, OrderStatus.CANCELLED))
-                .pendingInquiries(qnaRepository.countByStatus(QnaStatus.WAITING)) // QnA 상태도 Enum이라면 맞춰주세요
+                .pendingInquiries(qnaRepository.countByStatus(QnaStatus.WAITING))
                 .totalRevenue(orderRepository.sumTotalAmountByStatusNot(OrderStatus.CANCELLED))
                 .build();
     }
