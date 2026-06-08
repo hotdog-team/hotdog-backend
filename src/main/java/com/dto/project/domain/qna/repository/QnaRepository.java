@@ -13,4 +13,6 @@ public interface QnaRepository extends JpaRepository<Qna, Long> {
 
     // 전체 Q&A 목록 페이징 조회(관리자)
     Page<Qna> findByStatusNot(QnaStatus status, Pageable pageable);
+
+    long countByStatus(QnaStatus status);
 }

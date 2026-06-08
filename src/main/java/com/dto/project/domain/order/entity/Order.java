@@ -83,7 +83,7 @@ public class Order {
         if (this.status == OrderStatus.IN_TRANSIT || this.status == OrderStatus.DELIVERED) {
             throw new IllegalArgumentException("이미 배송 중이거나 완료된 상품은 취소가 불가능합니다.");
         }
-        this.status = OrderStatus.CANCELED;
+        this.status = OrderStatus.CANCELLED;
     }
 
     public void updateStatus(String statusStr) {

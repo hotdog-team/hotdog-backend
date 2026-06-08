@@ -15,6 +15,8 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
+    long countByStatus(MemberStatus status);
+
     // 로그인할 때 이메일로 유저를 찾기 위한 메서드
     Optional<Member> findByEmail(String email);
 
