@@ -7,5 +7,5 @@ public enum OrderStatus {
     BEFORE_SHIPMENT,  // 배송전
     IN_TRANSIT,       // 배송중
     DELIVERED,        // 배송완료
-    CANCELED          // 취소완료
+    CANCELLED          // 취소완료
 }

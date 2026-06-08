@@ -81,8 +81,9 @@ public class AuthService {
         // Redis에 Refresh Token 저장 (7일 유지)
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), refreshToken, 7, TimeUnit.DAYS);
 
-        return new AuthResponse(accessToken, refreshToken, member.getId(), member.getEmail(), member.getName());
+        return new AuthResponse(accessToken, refreshToken, member.getId(), member.getEmail(), member.getName(), member.getRole().name());
     }
+
 
     // 3. 로그아웃
     @Transactional
@@ -132,7 +133,7 @@ public class AuthService {
         // 6. Redis 정보 업데이트
         redisTemplate.opsForValue().set("RT:" + member.getEmail(), newRefreshToken, 7, TimeUnit.DAYS);
 
-        return new AuthResponse(newAccessToken, newRefreshToken, member.getId(), member.getEmail(), member.getName());
+        return new AuthResponse(newAccessToken, newRefreshToken, member.getId(), member.getEmail(), member.getName(), member.getRole().name());
     }
 
     // 5. [관리자용] 특정 유저 강제 로그아웃
