@@ -33,7 +33,7 @@ public class Payment {
     private Integer amount;
 
     @Column(name = "status", length = 50)
-    private String status; // PENDING, PROCESSING, CANCELED, COMPLETED, FAILED
+    private String status; // PENDING, PROCESSING, CANCELLED, COMPLETED, FAILED
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
