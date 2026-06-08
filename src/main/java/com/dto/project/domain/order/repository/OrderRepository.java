@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     // 특정 회원의 주문 목록 조회
     List<Order> findByMemberOrderByCreatedAtDesc(Member member);
-    
+
     Page<Order> findByMemberOrderByCreatedAtDesc(
             Member member,
             Pageable pageable
@@ -28,7 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             OrderStatus status,
             Pageable pageable
     );
-    
+
     // 주문 상세 조회 (N+1 방지)
     Optional<Order> findById(Long id);
 
@@ -39,7 +39,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus status,
             @Param("paymentMethod") PaymentMethod paymentMethod
     );
-    
+
+    long countByCreatedAtBetweenAndStatusNot(LocalDateTime start, LocalDateTime end, OrderStatus status);
+
     // 관리자 전체 주문 조회
     Page<Order> findAll(Pageable pageable);
 
@@ -48,4 +50,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             OrderStatus status,
             Pageable pageable
     );
+
+    // 플랫폼 총 거래액 (취소된 주문 제외)
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status != :status")
+    Long sumTotalAmountByStatusNot(@Param("status") OrderStatus status);
+
 }
