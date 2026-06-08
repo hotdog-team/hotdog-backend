@@ -26,19 +26,44 @@ public class CartService {
 
     // 장바구니 추가
     public void addCart(Long memberId, CartAddRequest request) {
+
+        // 수량 검증
+        validateQuantity(request.getQuantity());
+
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+
+        // 장바구니 추가 가능 상품 검증
+        validateAvailableProduct(product);
 
         Cart cart = cartRepository.findByMemberIdAndProductId(memberId, request.getProductId())
                 .orElse(null);
 
         if (cart != null) {
+
+            int updatedQuantity = cart.getQuantity() + request.getQuantity();
+
+            // 재고 초과 검증
+            validateStock(product, updatedQuantity);
+
             cart.increaseQuantity(request.getQuantity());
             return;
         }
 
-        Cart newCart = new Cart(memberId, ProductSource.INTERNAL, product, null, product.getName(),
-        						null, product.getPrice(), request.getQuantity());
+        // 재고 초과 검증
+        validateStock(product, request.getQuantity());
+
+        Cart newCart = new Cart(
+                memberId,
+                ProductSource.INTERNAL,
+                product,
+                null,
+                product.getName(),
+                null,
+                product.getPrice(),
+                request.getQuantity()
+        );
+
         cartRepository.save(newCart);
     }
 
@@ -47,6 +72,11 @@ public class CartService {
     public List<CartResponse> getCarts(Long memberId) {
         return cartRepository.findByMemberId(memberId)
                 .stream()
+
+                // 판매 가능한 상품만 조회
+                .filter(cart -> cart.getProduct() != null)
+                .filter(cart -> isAvailableProduct(cart.getProduct()))
+
                 .map(cart -> new CartResponse(
                         cart.getId(),
                         cart.getProduct().getId(),
@@ -60,12 +90,24 @@ public class CartService {
 
     // 장바구니 수량 수정
     public void updateCart(Long cartId, Long memberId, CartUpdateRequest request) {
+
+        // 수량 검증
+        validateQuantity(request.getQuantity());
+
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("장바구니 항목을 찾을 수 없습니다."));
 
         if (!cart.getMemberId().equals(memberId)) {
             throw new IllegalArgumentException("본인의 장바구니 항목만 수정할 수 있습니다.");
         }
+
+        Product product = cart.getProduct();
+
+        // 장바구니 수정 가능 상품 검증
+        validateAvailableProduct(product);
+
+        // 재고 초과 검증
+        validateStock(product, request.getQuantity());
 
         cart.updateQuantity(request.getQuantity());
     }
@@ -86,10 +128,15 @@ public class CartService {
     public void clearCart(Long memberId) {
         cartRepository.deleteByMemberId(memberId);
     }
-    
+
     // 장바구니 다량 추가
     @Transactional
     public void addCarts(Long memberId, CartBulkAddRequest request) {
+
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("추가할 장바구니 상품이 없습니다.");
+        }
+
         for (CartBulkAddRequest.CartAddItem item : request.getItems()) {
             CartAddRequest addRequest = new CartAddRequest();
             addRequest.setProductId(item.getProductId());
@@ -98,10 +145,15 @@ public class CartService {
             addCart(memberId, addRequest);
         }
     }
-    
+
     // 장바구니 다량 삭제
     @Transactional
     public void deleteCarts(Long memberId, CartBulkDeleteRequest request) {
+
+        if (request.getCartIds() == null || request.getCartIds().isEmpty()) {
+            throw new IllegalArgumentException("삭제할 장바구니 상품이 없습니다.");
+        }
+
         List<Cart> carts = cartRepository.findByIdInAndMemberId(
                 request.getCartIds(),
                 memberId
@@ -112,5 +164,42 @@ public class CartService {
         }
 
         cartRepository.deleteAll(carts);
+    }
+
+    // 수량 검증
+    private void validateQuantity(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        }
+    }
+
+    // 장바구니 추가/수정 가능 상품 검증
+    private void validateAvailableProduct(Product product) {
+
+        if (product == null) {
+            throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+        }
+
+        if (!"ON_SALE".equals(product.getStatus())) {
+            throw new IllegalArgumentException("판매 중인 상품만 장바구니에 담을 수 있습니다.");
+        }
+
+        if (product.getStockQuantity() <= 0) {
+            throw new IllegalArgumentException("품절된 상품은 장바구니에 담을 수 없습니다.");
+        }
+    }
+
+    // 판매 가능 상품 여부 확인
+    private boolean isAvailableProduct(Product product) {
+        return product != null
+                && "ON_SALE".equals(product.getStatus())
+                && product.getStockQuantity() > 0;
+    }
+
+    // 재고 검증
+    private void validateStock(Product product, int quantity) {
+        if (quantity > product.getStockQuantity()) {
+            throw new IllegalArgumentException("상품 재고보다 많은 수량은 담을 수 없습니다.");
+        }
     }
 }
