@@ -31,7 +31,7 @@ public class VirtualAccountScheduler {
         List<Order> expiredOrders = orderRepository.findExpiredPendingOrders(threeDaysAgo, OrderStatus.PENDING, PaymentMethod.CASH);
 
         for (Order order : expiredOrders) {
-            order.updateStatus("CANCELED");
+            order.updateStatus("CANCELLED");
             log.info("자동 취소 완료 - 주문 ID: {}", order.getId());
         }
     }
