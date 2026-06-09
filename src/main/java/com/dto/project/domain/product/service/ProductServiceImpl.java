@@ -25,7 +25,8 @@ public class ProductServiceImpl implements ProductService {
     private final MemberWeightScoreReadService memberWeightScoreReadService;
     private final SecurityUtil securityUtil;
     private final StringRedisTemplate redisTemplate;
-
+    
+    // 상품 목록 조회
     @Override
     public List<ProductListResponse> getProductList(ProductSearchCondition condition) {
         ProductSort sort = ProductSort.fromJson(condition.getSort());
@@ -85,9 +86,31 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductListResponse::new)
                 .toList();
     }
-
+    
+    // 상품 상세 조회
     @Override
     public ProductResponse getProductDetail(Long productId) {
         return productRepository.findProductDetail(productId);
+    }
+    
+    // 관련 상품 조회
+    @Override
+    public List<ProductResponse> getRelatedProducts(Long productId) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("상품을 찾을 수 없습니다.")
+                );
+
+        List<Product> relatedProducts =
+                productRepository.findTop4ByCategoryIdAndStatusAndIdNot(
+                        product.getCategoryId(),
+                        "ON_SALE",
+                        productId
+                );
+
+        return relatedProducts.stream()
+                .map(ProductResponse::new)
+                .toList();
     }
 }
