@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
-
+	
+	// 판매중인 상품 조회
     List<Product> findByStatus(String status);
 
     @Query(value = """
@@ -29,6 +30,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             )
             WHERE rn <= CEIL(cnt * :percent / 100.0)
             """, nativeQuery = true)
+    
+    // 인기 상품 ID 조회
     List<Long> findPopularProductIds(
             @Param("activeSince") LocalDateTime activeSince,
             @Param("percent") int percent);
@@ -51,7 +54,16 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             )
             WHERE rn <= CEIL(cnt * :percent / 100.0)
             """, nativeQuery = true)
+    
+    // 트렌딩 상품 ID 조회
     List<Long> findTrendingProductIds(
             @Param("trendingSince") LocalDateTime trendingSince,
             @Param("percent") int percent);
+    
+    // 동일 카테고리 상품 조회
+    List<Product> findTop4ByCategoryIdAndStatusAndIdNot(
+            Long categoryId,
+            String status,
+            Long productId
+    );
 }

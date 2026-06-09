@@ -15,15 +15,25 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
-
+    
+    // 상품 목록 조회
     @GetMapping
     public List<ProductListResponse> getProductList(ProductSearchCondition condition) {
         return productService.getProductList(condition);
     }
-
+    
+    // 상품 상세 조회
     @GetMapping("/{productId}")
     public ProductResponse getProductDetail(@PathVariable Long productId) {
         return productService.getProductDetail(productId);
+    }
+    
+    // 관련 상품 조회
+    @GetMapping("/{productId}/related")
+    public List<ProductResponse> getRelatedProducts(
+            @PathVariable Long productId
+    ) {
+        return productService.getRelatedProducts(productId);
     }
     
     
