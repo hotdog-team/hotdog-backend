@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
 @Table(name="meta_tags")
 public class MetaTagEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "meta_tag_seq")
+    @SequenceGenerator(name = "meta_tag_seq", sequenceName = "META_TAGS_SEQ", allocationSize = 1)
     private Long id;
     private String name;
     @Enumerated(EnumType.STRING)

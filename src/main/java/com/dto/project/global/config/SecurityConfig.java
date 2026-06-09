@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh").permitAll()
 
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/api/faqs").permitAll()
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
