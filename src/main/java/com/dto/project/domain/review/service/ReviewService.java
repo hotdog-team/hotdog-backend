@@ -4,6 +4,8 @@ import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.order.repository.OrderItemRepository;
+import com.dto.project.domain.product.entity.Product;
+import com.dto.project.domain.product.repository.ProductRepository;
 import com.dto.project.domain.review.dto.ReviewCreateRequest;
 import com.dto.project.domain.review.dto.ReviewResponse;
 import com.dto.project.domain.review.dto.ReviewUpdateRequest;
@@ -26,6 +28,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final MemberRepository memberRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductRepository productRepository;
 
     public void createReview(Long memberId, Long orderItemId, ReviewCreateRequest request) {
         validateReviewRequest(request.getRating(), request.getContent());
@@ -50,6 +53,10 @@ public class ReviewService {
                 .build();
 
         reviewRepository.save(review);
+
+        if (orderItem.getProduct() != null) {
+            updateProductReviewStats(orderItem.getProduct());
+        }
     }
     
     @Transactional(readOnly = true)
@@ -58,6 +65,7 @@ public class ReviewService {
                 .findAllByProductIdAndStatusOrderByCreatedAtDesc(productId, "ACTIVE", pageable)
                 .map(ReviewResponse::from);
     }
+    
 
     @Transactional(readOnly = true)
     public Page<ReviewResponse> getMyReviews(Long memberId, Pageable pageable) {
@@ -82,7 +90,9 @@ public class ReviewService {
                 request.getRating(),
                 request.getContent(),
                 request.getImageUrl()
+                   
         );
+        updateProductReviewStats(review.getProduct());
     }
 
     public void deleteReview(Long memberId, Long reviewId) {
@@ -94,6 +104,10 @@ public class ReviewService {
         }
 
         review.changeStatus("DELETED");
+        
+        if (review.getProduct() != null) {
+            updateProductReviewStats(review.getProduct());
+        }
     }
 
     private void validateReviewRequest(Integer rating, String content) {
@@ -104,5 +118,19 @@ public class ReviewService {
         if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("리뷰 내용을 입력해야 합니다.");
         }
+    }
+    
+    private void updateProductReviewStats(Product product) {
+
+        Double averageRate =
+                reviewRepository.findAverageRateByProductId(product.getId());
+
+        Integer reviewCount =
+                Math.toIntExact(reviewRepository.countByProduct_IdAndStatus(product.getId(), "ACTIVE"));
+
+        product.updateReviewStats(
+                averageRate,
+                reviewCount
+        );
     }
 }
