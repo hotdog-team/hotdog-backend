@@ -13,6 +13,7 @@ public class ProductListResponse {
     private Integer price;
     private Integer deliveryFee;
     private String shortDescription;
+    private Integer discountRate;
     private String brand;
     private String altText;
     private String status;
@@ -25,6 +26,7 @@ public class ProductListResponse {
         this.categoryId = product.getCategoryId();
         this.name = product.getName();
         this.price = product.getPrice();
+        this.discountRate = product.getDiscountRate();
         this.deliveryFee = product.getDeliveryFee();
         this.shortDescription = product.getShortDescription();
         this.brand = product.getBrand();
