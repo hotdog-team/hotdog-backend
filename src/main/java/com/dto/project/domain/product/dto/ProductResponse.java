@@ -1,6 +1,7 @@
 package com.dto.project.domain.product.dto;
 
 import com.dto.project.domain.product.entity.Product;
+import com.dto.project.domain.product.entity.ProductImage;
 import lombok.Getter;
 
 @Getter
@@ -24,6 +25,7 @@ public class ProductResponse {
     private String altText;
     private Double weightScore;
     private String status;
+    private String imageUrl;
 
     public ProductResponse(Product product) {
         this.id = product.getId();
@@ -44,5 +46,15 @@ public class ProductResponse {
         this.altText = product.getAltText();
         this.weightScore = product.getWeightScore();
         this.status = product.getStatus();
+
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            this.imageUrl = product.getImages().stream()
+                    .filter(ProductImage::isMain)
+                    .map(ProductImage::getImageUrl)
+                    .findFirst()
+                    .orElse(product.getImages().get(0).getImageUrl());
+        } else {
+            this.imageUrl = null;
+        }
     }
 }

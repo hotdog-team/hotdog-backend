@@ -3,17 +3,17 @@ package com.dto.project.domain.admin.product.service;
 import com.dto.project.domain.admin.product.dto.AdminProductRequest;
 import com.dto.project.domain.category.entity.Category;
 import com.dto.project.domain.category.repository.CategoryRepository;
-import com.dto.project.domain.metatags.entity.MetaTagType;
-import com.dto.project.domain.product.entity.Product;
-import com.dto.project.domain.product.repository.ProductRepository;
-
 import com.dto.project.domain.metatags.entity.MetaTagEntity;
 import com.dto.project.domain.metatags.entity.MetaTagProduct;
 import com.dto.project.domain.metatags.entity.MetaTagStatus;
-import com.dto.project.domain.metatags.repository.MetaTagRepository;
+import com.dto.project.domain.metatags.entity.MetaTagType;
 import com.dto.project.domain.metatags.repository.MetaTagProductRepository;
+import com.dto.project.domain.metatags.repository.MetaTagRepository;
 import com.dto.project.domain.metatags.service.ProductMetaTagAutoService;
-
+import com.dto.project.domain.product.entity.Product;
+import com.dto.project.domain.product.entity.ProductImage;
+import com.dto.project.domain.product.repository.ProductImageRepository;
+import com.dto.project.domain.product.repository.ProductRepository;
 import com.dto.project.domain.weighting.config.WeightingProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +34,7 @@ public class AdminProductService {
     private final WeightingProperties weightProps;
     private final CategoryRepository categoryRepository;
     private final ProductMetaTagAutoService productMetaTagAutoService;
+    private final ProductImageRepository productImageRepository;
 
 
     private static final Set<MetaTagType> MANUAL_TYPES = EnumSet.of(
@@ -70,6 +71,14 @@ public class AdminProductService {
 
         productRepository.save(product);
 
+        if (request.getImageUrl() != null && !request.getImageUrl().isBlank()) {
+            ProductImage productImage = new ProductImage();
+            productImage.setProductId(product.getId());
+            productImage.setImageUrl(request.getImageUrl());
+            productImage.setMain(true);
+            productImageRepository.save(productImage);
+        }
+
         saveMetaTags(product, request.getCategoryId(), request.getMetaTagIds());
     }
 
@@ -94,6 +103,16 @@ public class AdminProductService {
 
         if (product.getStatus() == null) {
             product.setStatus("ON_SALE");
+        }
+
+        if (request.getImageUrl() != null && !request.getImageUrl().isBlank()) {
+            productImageRepository.deleteByProductId(productId);
+
+            ProductImage productImage = new ProductImage();
+            productImage.setProductId(productId);
+            productImage.setImageUrl(request.getImageUrl());
+            productImage.setMain(true);
+            productImageRepository.save(productImage);
         }
 
         // 기존 매핑 끊고 새로 매핑

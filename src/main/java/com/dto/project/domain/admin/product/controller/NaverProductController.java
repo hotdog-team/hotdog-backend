@@ -1,9 +1,8 @@
 package com.dto.project.domain.admin.product.controller;
+
 import com.dto.project.domain.admin.product.dto.NaverProductCreateRequest;
-import com.dto.project.domain.admin.product.dto.NaverShoppingResponse;
 import com.dto.project.domain.admin.product.service.NaverShoppingService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +15,12 @@ public class NaverProductController {
     
     // 네이버 쇼핑 상품 검색
     @GetMapping("/search")
-    public NaverShoppingResponse searchNaverProducts(
-            @RequestParam String query
+    public ResponseEntity<?> searchNaverProducts(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        return naverShoppingService.searchProducts(query);
+        return ResponseEntity.ok(naverShoppingService.searchProducts(query, page, size));
     }
     
     // 네이버 쇼핑 상품 등록
