@@ -24,6 +24,10 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             jpql.append(" AND p.categoryId = :categoryId");
         }
 
+        if (condition.getKeyword() != null && !condition.getKeyword().isBlank()) {
+            jpql.append(" AND p.name LIKE :keyword");
+        }
+
         boolean hasMetaTags = condition.getMetaTagIds() != null && !condition.getMetaTagIds().isEmpty();
 
         TypedQuery<Product> query;
@@ -47,6 +51,9 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
         if (condition.getCategoryId() != null) {
             query.setParameter("categoryId", condition.getCategoryId());
+        }
+        if (condition.getKeyword() != null && !condition.getKeyword().isBlank()) {
+            query.setParameter("keyword", "%" + condition.getKeyword() + "%");
         }
         if (condition.getSize() != null) query.setMaxResults(condition.getSize());
         return query.getResultList();

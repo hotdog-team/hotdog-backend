@@ -15,4 +15,5 @@ public class ProductSearchCondition {
     private String match;
     private List<Long> metaTagIds;
     private Integer size;
+    private Integer page;
 }

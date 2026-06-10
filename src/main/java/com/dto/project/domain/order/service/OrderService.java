@@ -227,9 +227,10 @@ public class OrderService {
                 continue;
             }
 
-            // 사내 상품 재고 복구
+            // 사내 상품 재고 복구 & 판매량 복구
             if (orderItem.getProduct() != null) {
                 orderItem.getProduct().increaseStock(orderItem.getQuantity());
+                orderItem.getProduct().decreaseSalesCount(orderItem.getQuantity());
             }
 
             // 주문 상품 상태 변경
@@ -274,9 +275,10 @@ public class OrderService {
                 throw new IllegalStateException("이미 취소된 주문 상품입니다.");
             }
 
-            // 사내 상품 재고 복구
+            // 사내 상품 재고 복구 & 판매량 감소
             if (orderItem.getProduct() != null) {
                 orderItem.getProduct().increaseStock(orderItem.getQuantity());
+                orderItem.getProduct().decreaseSalesCount(orderItem.getQuantity());
             }
 
             // 주문 상품 상태 변경

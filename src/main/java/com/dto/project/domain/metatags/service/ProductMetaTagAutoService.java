@@ -25,7 +25,6 @@ public class ProductMetaTagAutoService {
     private final ProductRepository productRepository;
     private final MetaTagRepository metaTagRepository;
     private final MetaTagProductRepository metaTagProductRepository;
-    private final ProductWeightLogRepository productWeightLogRepository;
     private final ProductMetaTagAutoProperties autoProps;
 
     private static final Set<MetaTagType> AUTO_TYPES = EnumSet.of(
@@ -147,8 +146,8 @@ public class ProductMetaTagAutoService {
 
     // 스테디 셀러
     private Optional<Long> resolveSteadySellerTag(Product product) {
-        // ProductLog에서 BUY들을 가져온다
-        long salesCount = productWeightLogRepository.countUncancelledBuyByProductId(product.getId());
+
+        long salesCount = product.getSalesCount() != null ? product.getSalesCount() : 0L;
 
         if (salesCount < autoProps.getSteadySellerMinSales()) {
             return Optional.empty();

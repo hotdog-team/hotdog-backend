@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface ProductWeightLogRepository extends JpaRepository<ProductWeightLog, Long> {
@@ -34,17 +33,5 @@ public interface ProductWeightLogRepository extends JpaRepository<ProductWeightL
 
     Optional<ProductWeightLog> findFirstByMemberIdAndProductIdAndActionTypeOrderByEventTimeStampDesc(
             Long memberId, Long productId, WeightLogType actionType);
-
-    @Query("""
-    SELECT COUNT(p) FROM ProductWeightLog p
-    WHERE p.productId = :productId
-      AND p.actionType = com.dto.project.domain.weighting.entity.WeightLogType.BUY
-      AND NOT EXISTS (
-          SELECT 1 FROM ProductWeightLog c
-          WHERE c.referenceId = p.id
-            AND c.actionType = com.dto.project.domain.weighting.entity.WeightLogType.CANCEL_BUY
-      )
-    """)
-    long countUncancelledBuyByProductId(@Param("productId") Long productId);
 
 }
