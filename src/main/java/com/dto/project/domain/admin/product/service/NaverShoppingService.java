@@ -17,9 +17,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 @RequiredArgsConstructor
 public class NaverShoppingService {
-	
-	private final ProductRepository productRepository;
-	private final ProductImageRepository productImageRepository;
+
+    private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
 
     @Value("${naver.api.client-id}")
     private String clientId;
@@ -29,19 +29,22 @@ public class NaverShoppingService {
 
     @Value("${naver.api.shopping-url}")
     private String shoppingUrl;
-    
     // 네이버 쇼핑 상품 검색
-    public NaverShoppingResponse searchProducts(String query) {
-    	// 네이버 쇼핑 검색 API 요청 URL 생성
-    	String url = UriComponentsBuilder
-    	        .fromUriString(shoppingUrl)
-    	        .queryParam("query", query)
-    	        .queryParam("display", 10)
-    	        .queryParam("start", 1)
-    	        .queryParam("sort", "sim")
-    	        .build()
-    	        .toUriString();
-    	// 네이버 쇼핑 API 호출
+    public NaverShoppingResponse searchProducts(String query, int page, int size) {
+
+        int start = (page - 1) * size + 1;
+
+        // 네이버 쇼핑 검색 API 요청 URL 생성
+        String url = UriComponentsBuilder
+                .fromUriString(shoppingUrl)
+                .queryParam("query", query)
+                .queryParam("display", size)
+                .queryParam("start", start)
+                .queryParam("sort", "sim")
+                .build()
+                .toUriString();
+
+        // 네이버 쇼핑 API 호출
         return RestClient.create()
                 .get()
                 .uri(url)
@@ -50,17 +53,13 @@ public class NaverShoppingService {
                 .retrieve()
                 .body(NaverShoppingResponse.class);
     }
-    
     // 네이버 쇼핑 API 응답의 HTML 태그 제거
     private String removeHtmlTags(String text) {
         return text == null ? null : text.replaceAll("<[^>]*>", "");
     }
-    
     // 네이버 쇼핑 상품 등록
     @Transactional
-    public void createProductFromNaver(
-            NaverProductCreateRequest request
-    ) {
+    public void createProductFromNaver(NaverProductCreateRequest request) {
 
         Product product = new Product();
 
@@ -86,10 +85,8 @@ public class NaverShoppingService {
             ProductImage productImage = new ProductImage();
             productImage.setProductId(savedProduct.getId());
             productImage.setImageUrl(request.getImage());
-            productImage.setIsMain("Y");
-
+            productImage.setMain(true);
             productImageRepository.save(productImage);
         }
     }
-    
 }

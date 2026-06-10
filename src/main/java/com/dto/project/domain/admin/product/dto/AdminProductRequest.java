@@ -17,6 +17,7 @@ public class AdminProductRequest {
     private String origin;
     private String specInfo;
     private String altText;
+    private String imageUrl;
 
     // 다중 메타태그 및 이미지 처리
     private List<Long> metaTagIds;
