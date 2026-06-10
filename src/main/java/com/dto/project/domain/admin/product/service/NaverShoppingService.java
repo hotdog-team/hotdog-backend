@@ -68,6 +68,7 @@ public class NaverShoppingService {
                 removeHtmlTags(request.getTitle()),
                 request.getLprice(),
                 0,
+                0,
                 100,
                 "네이버 쇼핑 API 등록 상품",
                 request.getLink(),
