@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AddressService {
-	
+
     private final AddressRepository addressRepository;
     private final MemberRepository memberRepository;
 
@@ -43,6 +43,7 @@ public class AddressService {
         // 배송지 Entity 생성
         Address address = Address.builder()
                 .member(member)
+                .addressName(request.getAddressName())
                 .zipCode(request.getZipCode())
                 .baseAddress(request.getBaseAddress())
                 .detailAddress(request.getDetailAddress())
@@ -76,7 +77,7 @@ public class AddressService {
 
         return AddressResponse.from(address);
     }
-    
+
  // 배송지 수정
     @Transactional
     public AddressResponse updateAddress(Long memberId, Long addressId, AddressUpdateRequest request) {
@@ -93,6 +94,7 @@ public class AddressService {
 
         // 주소 정보 수정
         address.updateAddress(
+                request.getAddressName(),
                 request.getZipCode(),
                 request.getBaseAddress(),
                 request.getDetailAddress(),

@@ -5,6 +5,8 @@ import lombok.Getter;
 @Getter
 public class AddressUpdateRequest {
 
+    private String addressName;
+
     // 우편번호
     private String zipCode;
 

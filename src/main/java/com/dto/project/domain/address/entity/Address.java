@@ -55,7 +55,8 @@ public class Address extends BaseTimeEntity { // 생성/수정 시간 상속
     /**
      * 주소 정보 업데이트
      */
-    public void updateAddress(String zipCode, String baseAddress, String detailAddress, String receiverName, String receiverPhone) {
+    public void updateAddress(String addressName, String zipCode, String baseAddress, String detailAddress, String receiverName, String receiverPhone) {
+        if (addressName != null) this.addressName = addressName;
         if (zipCode != null) this.zipCode = zipCode;
         if (baseAddress != null) this.baseAddress = baseAddress;
         if (detailAddress != null) this.detailAddress = detailAddress;
