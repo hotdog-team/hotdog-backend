@@ -48,7 +48,7 @@ public class ProductServiceImpl implements ProductService {
 
         //기본 정렬이 아니라면 searchProducts에서 처리합니다
         //DISLIKE 처리로 수정
-        if (sort != ProductSort.RECOMMEND) {
+        if (sort != ProductSort.RECOMMEND && sort != ProductSort.ATTENTION) {
             return products.stream()
                     .sorted(Comparator.comparing(Product::getCreatedAt,
                             Comparator.nullsLast(Comparator.reverseOrder())))

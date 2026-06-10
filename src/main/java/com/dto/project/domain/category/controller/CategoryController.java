@@ -3,6 +3,9 @@ package com.dto.project.domain.category.controller;
 import com.dto.project.domain.category.dto.CategoryRequest;
 import com.dto.project.domain.category.dto.CategoryResponse;
 import com.dto.project.domain.category.service.CategoryService;
+import com.dto.project.domain.product.dto.ProductListResponse;
+import com.dto.project.domain.product.dto.ProductSearchCondition;
+import com.dto.project.domain.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,8 +16,12 @@ import java.util.List;
 @RequestMapping("/api")
 public class CategoryController {
     private final CategoryService categoryService;
+    private final ProductService productService;
 
-    public CategoryController(CategoryService categoryService) { this.categoryService = categoryService; }
+    public CategoryController(CategoryService categoryService, ProductService productService) {
+        this.categoryService = categoryService;
+        this.productService = productService;
+    }
 
     //카테고리 리스트 조회
     @GetMapping("/categories")
@@ -26,6 +33,15 @@ public class CategoryController {
     @GetMapping("/categories/{id}")
     public CategoryResponse getCategoryDetail(@PathVariable("id") Long id){
         return categoryService.detailViewCategory(id);
+    }
+
+    //카테고리별 상품 목록 조회
+    @GetMapping("/categories/{id}/products")
+    public List<ProductListResponse> getCategoryProducts(
+            @PathVariable("id") Long id,
+            ProductSearchCondition condition) {
+        condition.setCategoryId(id);
+        return productService.getProductList(condition);
     }
 
     //카테고리 등록
