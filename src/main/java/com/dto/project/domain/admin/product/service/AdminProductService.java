@@ -95,11 +95,21 @@ public class AdminProductService {
 
         // 상품 기본 정보 업데이트
         product.updateProductInfo(
-                request.getCategoryId(), request.getName(), request.getPrice(),
-                request.getDeliveryFee(), request.getStockQuantity(), request.getShortDescription(),
-                request.getDescription(), request.getBrand(), request.getOrigin(),
-                request.getSpecInfo(), request.getAltText()
+                request.getCategoryId(),
+                request.getName(),
+                request.getPrice(),
+                discountRateToUpdate,
+                request.getDeliveryFee(),
+                request.getStockQuantity(),
+                request.getShortDescription(),
+                request.getDescription(),
+                request.getBrand(),
+                request.getOrigin(),
+                request.getSpecInfo(),
+                request.getAltText()
         );
+
+        product.setDiscountRate(discountRateToUpdate);
 
         if (product.getStatus() == null) {
             product.setStatus("ON_SALE");

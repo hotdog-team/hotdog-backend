@@ -21,13 +21,12 @@ public class ProductImage {
     private String imageUrl;
 
     @Column(name = "is_main")
-    private String isMain;
+    private Integer isMain = 0;
 
     public boolean isMain() {
-        return "Y".equalsIgnoreCase(this.isMain);
+        return this.isMain == 1;
     }
-
-    public void setMain(boolean main) {
-        this.isMain = main ? "Y" : "N";
+    public void setMain(boolean isMain) {
+        this.isMain = isMain ? 1 : 0;
     }
 }

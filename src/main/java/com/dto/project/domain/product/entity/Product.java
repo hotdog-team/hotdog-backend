@@ -128,9 +128,10 @@ public class Product {
     }
 
     public void updateProductInfo(
-            Long categoryId, String name, Integer price, Integer deliveryFee,
-            Integer stockQuantity, String shortDescription, String description,
-            String brand, String origin, String specInfo, String altText) {
+            Long categoryId, String name, Integer price, Integer discountRate,
+            Integer deliveryFee, Integer stockQuantity, String shortDescription,
+            String description, String brand, String origin, String specInfo, String altText) {
+
         this.categoryId = categoryId;
         this.name = name;
         this.price = price;
@@ -148,7 +149,6 @@ public class Product {
         if (this.status == null) {
             this.status = "ON_SALE";
         }
-
     }
 
     public void updateReviewStats(Double averageRate, Integer reviewCount) {
