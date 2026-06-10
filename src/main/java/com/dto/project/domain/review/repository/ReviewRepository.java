@@ -7,6 +7,7 @@ import com.dto.project.domain.review.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -32,5 +33,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // 3. [공통] 해당 주문건(OrderItem)으로 작성된 리뷰가 이미 존재하는지 체크
     boolean existsByOrderItem(OrderItem orderItem);
+    
+    
+    @Query("""
+    	       SELECT COALESCE(AVG(r.rating), 0)
+    	       FROM Review r
+    	       WHERE r.product.id = :productId
+    	       AND r.status = 'ACTIVE'
+    	       """)
+    	Double findAverageRateByProductId(Long productId);
+
+    	long countByProduct_IdAndStatus(Long productId, String status);
 
 }

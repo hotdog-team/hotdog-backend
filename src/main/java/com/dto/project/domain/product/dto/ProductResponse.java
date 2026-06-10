@@ -29,6 +29,8 @@ public class ProductResponse {
     private String status;
     private String imageUrl;
     private List<Long> metaTagIds;
+    private Double averageRate;
+    private Integer reviewCount;
 
     public ProductResponse(Product product) {
         this.id = product.getId();
@@ -49,6 +51,9 @@ public class ProductResponse {
         this.altText = product.getAltText();
         this.weightScore = product.getWeightScore();
         this.status = product.getStatus();
+        
+        this.averageRate = product.getAverageRate();
+        this.reviewCount = product.getReviewCount();
 
         if (product.getImages() != null && !product.getImages().isEmpty()) {
             this.imageUrl = product.getImages().stream()

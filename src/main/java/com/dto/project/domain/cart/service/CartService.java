@@ -1,6 +1,7 @@
 package com.dto.project.domain.cart.service;
 
 import com.dto.project.domain.cart.dto.CartAddRequest;
+import com.dto.project.domain.product.entity.ProductImage;
 import com.dto.project.domain.cart.dto.CartBulkAddRequest;
 import com.dto.project.domain.cart.dto.CartBulkDeleteRequest;
 import com.dto.project.domain.cart.dto.CartResponse;
@@ -67,7 +68,7 @@ public class CartService {
         cartRepository.save(newCart);
     }
 
-    // 장바구니 조회
+ // 장바구니 조회
     @Transactional(readOnly = true)
     public List<CartResponse> getCarts(Long memberId) {
         return cartRepository.findByMemberId(memberId)
@@ -77,14 +78,18 @@ public class CartService {
                 .filter(cart -> cart.getProduct() != null)
                 .filter(cart -> isAvailableProduct(cart.getProduct()))
 
-                .map(cart -> new CartResponse(
-                        cart.getId(),
-                        cart.getProduct().getId(),
-                        cart.getProduct().getName(),
-                        cart.getProduct().getPrice(),
-                        cart.getQuantity(),
-                        null // TODO: 상품 이미지 엔티티 연결 후 썸네일 이미지 넣기
-                ))
+                .map(cart -> {
+                    Product product = cart.getProduct();
+
+                    return new CartResponse(
+                            cart.getId(),
+                            product.getId(),
+                            product.getName(),
+                            product.getPrice(),
+                            cart.getQuantity(),
+                            getThumbnailImage(product)
+                    );
+                })
                 .toList();
     }
 
@@ -201,5 +206,25 @@ public class CartService {
         if (quantity > product.getStockQuantity()) {
             throw new IllegalArgumentException("상품 재고보다 많은 수량은 담을 수 없습니다.");
         }
+    }
+    
+    // 장바구니 썸네일 이미지 조회
+    private String getThumbnailImage(Product product) {
+        if (product.getImages() == null || product.getImages().isEmpty()) {
+            return null;
+        }
+
+        return product.getImages().stream()
+                .filter(ProductImage::isMain)
+                .map(ProductImage::getImageUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .findFirst()
+                .orElseGet(() ->
+                        product.getImages().stream()
+                                .map(ProductImage::getImageUrl)
+                                .filter(url -> url != null && !url.isBlank())
+                                .findFirst()
+                                .orElse(null)
+                );
     }
 }

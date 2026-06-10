@@ -70,6 +70,12 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "average_rate", nullable = false)
+    private Double averageRate = 0.0;
+
+    @Column(name = "review_count", nullable = false)
+    private Integer reviewCount = 0;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "product_id")
@@ -133,5 +139,10 @@ public class Product {
             this.status = "ON_SALE";
         }
 
+    }
+
+    public void updateReviewStats(Double averageRate, Integer reviewCount) {
+        this.averageRate = averageRate;
+        this.reviewCount = reviewCount;
     }
 }
