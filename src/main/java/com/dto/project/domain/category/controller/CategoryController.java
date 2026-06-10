@@ -3,7 +3,7 @@ package com.dto.project.domain.category.controller;
 import com.dto.project.domain.category.dto.CategoryRequest;
 import com.dto.project.domain.category.dto.CategoryResponse;
 import com.dto.project.domain.category.service.CategoryService;
-import com.dto.project.domain.product.dto.ProductListResponse;
+import com.dto.project.domain.product.dto.ProductPageResponse;
 import com.dto.project.domain.product.dto.ProductSearchCondition;
 import com.dto.project.domain.product.service.ProductService;
 import jakarta.validation.Valid;
@@ -37,7 +37,7 @@ public class CategoryController {
 
     //카테고리별 상품 목록 조회
     @GetMapping("/categories/{id}/products")
-    public List<ProductListResponse> getCategoryProducts(
+    public ProductPageResponse getCategoryProducts(
             @PathVariable("id") Long id,
             ProductSearchCondition condition) {
         condition.setCategoryId(id);

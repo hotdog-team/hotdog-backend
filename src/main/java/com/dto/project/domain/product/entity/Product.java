@@ -53,6 +53,9 @@ public class Product {
     @Column(name = "alt_text")
     private String altText;
 
+    @Column(name = "sales_count")
+    private Long salesCount = 0L;
+
     @Column(name = "weight_score")
     private Double weightScore;
 
@@ -83,6 +86,11 @@ public class Product {
         this.stockQuantity -= quantity;
     }
 
+    // 해당 상품 판매량 증가
+    public void increaseSalesCount(int quantity) {
+        this.salesCount += quantity;
+    }
+
     // 상태 변경
     public void changeStatus(String status) {
         this.status = status;
@@ -94,6 +102,10 @@ public class Product {
         this.stockQuantity += quantity;
     }
 
+    // 해당 상품 판매량 감수
+    public void decreaseSalesCount(int quantity) {
+        this.salesCount -= quantity;
+    }
 
     public void updateProductInfo(
             Long categoryId, String name, Integer price, Integer deliveryFee,

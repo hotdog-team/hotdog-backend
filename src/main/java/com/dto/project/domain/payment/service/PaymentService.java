@@ -80,6 +80,7 @@ public class PaymentService {
             }
 
             orderItem.getProduct().decreaseStock(orderItem.getQuantity());
+            orderItem.getProduct().increaseSalesCount(orderItem.getQuantity());
         }
     }
 }
