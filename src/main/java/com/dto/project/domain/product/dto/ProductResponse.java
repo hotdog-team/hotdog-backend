@@ -4,6 +4,8 @@ import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.entity.ProductImage;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 public class ProductResponse {
 
@@ -26,6 +28,7 @@ public class ProductResponse {
     private Double weightScore;
     private String status;
     private String imageUrl;
+    private List<Long> metaTagIds;
 
     public ProductResponse(Product product) {
         this.id = product.getId();
@@ -56,5 +59,10 @@ public class ProductResponse {
         } else {
             this.imageUrl = null;
         }
+    }
+
+    public ProductResponse(Product product, List<Long> metaTagIds) {
+        this(product);
+        this.metaTagIds = metaTagIds;
     }
 }

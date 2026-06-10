@@ -125,7 +125,15 @@ public class ProductServiceImpl implements ProductService {
     // 상품 상세 조회
     @Override
     public ProductResponse getProductDetail(Long productId) {
-        return productRepository.findProductDetail(productId);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+
+        List<Long> metaTagIds = metaTagProductRepository.findByProduct_Id(productId)
+                .stream()
+                .map(mapping -> mapping.getMetaTag().getId())
+                .collect(Collectors.toList());
+
+        return new ProductResponse(product, metaTagIds);
     }
     
     // 관련 상품 조회
