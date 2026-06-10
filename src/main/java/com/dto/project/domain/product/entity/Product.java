@@ -1,5 +1,6 @@
 package com.dto.project.domain.product.entity;
 
+import com.dto.project.domain.category.entity.Category;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -80,6 +81,15 @@ public class Product {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "product_id")
     private List<ProductImage> images = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", insertable = false, updatable = false)
+    private Category category;
+
+
+    public String getCategoryName() {
+        return category != null ? category.getName() : null;
+    }
 
     // WeightScore 적용
     public void adjustWeightScore(double delta) {
