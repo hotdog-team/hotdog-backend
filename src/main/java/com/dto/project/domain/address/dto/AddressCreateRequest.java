@@ -22,4 +22,6 @@ public class AddressCreateRequest {
 
     // 기본 배송지 여부
     private Boolean isDefault;
+
+    private String addressName;
 }

@@ -29,12 +29,15 @@ public class AddressResponse {
     // 기본 배송지 여부
     private Boolean isDefault;
 
+    private String addressName;
+
     // Entity -> DTO 변환
     public static AddressResponse from(Address address) {
         return AddressResponse.builder()
                 .addressId(address.getId())
                 .zipCode(address.getZipCode())
                 .baseAddress(address.getBaseAddress())
+                .addressName(address.getAddressName())
                 .detailAddress(address.getDetailAddress())
                 .receiverName(address.getReceiverName())
                 .receiverPhone(address.getReceiverPhone())
