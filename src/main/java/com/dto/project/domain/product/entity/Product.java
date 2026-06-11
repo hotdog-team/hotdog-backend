@@ -1,5 +1,6 @@
 package com.dto.project.domain.product.entity;
 
+import com.dto.project.domain.category.entity.Category;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -60,7 +61,7 @@ public class Product {
     private Long salesCount = 0L;
 
     @Column(name = "weight_score")
-    private Double weightScore;
+    private Double weightScore = 0.0;
 
     private String status;
 
@@ -80,6 +81,15 @@ public class Product {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "product_id")
     private List<ProductImage> images = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", insertable = false, updatable = false)
+    private Category category;
+
+
+    public String getCategoryName() {
+        return category != null ? category.getName() : null;
+    }
 
     // WeightScore 적용
     public void adjustWeightScore(double delta) {
@@ -139,6 +149,11 @@ public class Product {
         if (this.status == null) {
             this.status = "ON_SALE";
         }
+    }
+
+    //SalePrice를 구한다
+    public int getSalePrice() {
+        return (int) (price * (1 - (discountRate / 100.0)));
     }
 
     public void updateReviewStats(Double averageRate, Integer reviewCount) {

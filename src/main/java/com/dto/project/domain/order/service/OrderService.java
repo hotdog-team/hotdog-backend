@@ -15,8 +15,11 @@ import com.dto.project.domain.order.repository.OrderItemRepository;
 import com.dto.project.domain.order.repository.OrderRepository;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.weighting.entity.WeightLogType;
+import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import com.dto.project.global.exception.DefaultErrorDetailMessages;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,12 +34,14 @@ import com.dto.project.domain.product.entity.ProductImage;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final CartRepository cartRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductWeightLogService productWeightLogService;
     
     // 장바구니 기반 주문서 조회
     public CheckoutResponse createCartCheckout(CheckoutRequest request, Member member) {
@@ -189,6 +194,12 @@ public class OrderService {
 
         orderRepository.save(order);
 
+        for (OrderItem orderItem : temporaryOrderItems) {
+            if (orderItem.getProduct() != null) {
+                recordBuyBehavior(member.getId(), orderItem.getProduct().getId());
+            }
+        }
+
         return order.getId();
     }
 
@@ -255,6 +266,10 @@ public class OrderService {
 
             // 주문 상품 상태 변경
             orderItem.cancel();
+
+            if (orderItem.getProduct() != null) {
+                recordCancelBuyBehavior(member.getId(), orderItem.getProduct().getId());
+            }
         }
 
         // 주문 상태 취소 완료
@@ -303,6 +318,10 @@ public class OrderService {
 
             // 주문 상품 상태 변경
             orderItem.cancel();
+
+            if (orderItem.getProduct() != null) {
+                recordCancelBuyBehavior(member.getId(), orderItem.getProduct().getId());
+            }
         }
 
         // 남아있는 주문 상품이 있는지 확인
@@ -314,6 +333,22 @@ public class OrderService {
             order.updateStatus(OrderStatus.PARTIAL_CANCELLED);
         } else {
             order.cancel();
+        }
+    }
+
+    private void recordBuyBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.BUY);
+        } catch (Exception e) {
+            log.warn("주문 behavior log(BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+        }
+    }
+
+    private void recordCancelBuyBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CANCEL_BUY);
+        } catch (Exception e) {
+            log.warn("주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
         }
     }
 }

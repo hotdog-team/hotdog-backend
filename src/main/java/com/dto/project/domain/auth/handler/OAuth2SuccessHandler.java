@@ -15,6 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -32,38 +33,44 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        String email = getEmailFromAttributes(attributes);
-        String role = "USER";
+        String provider = (String) attributes.get("provider");
+        String providerId = (String) attributes.get("providerId");
 
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소셜 회원입니다."));
-        Long memberId = member.getId();
+        Optional<Member> memberOpt = memberRepository.findByProviderAndProviderId(provider, providerId);
 
-        // 1. JWT 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(memberId, email, role);
-        String refreshToken = jwtProvider.createRefreshToken(email);
+        String targetUrl;
 
-        // 2. 프론트엔드 리다이렉트 URL 생성
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/social-success")
-                .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
-                .queryParam("memberId", memberId)
-                .build().toUriString();
+        if (memberOpt.isEmpty()) {
+            // 1. DB에 없는 소셜 계정 -> 최초 진입 (회원가입 창으로 보내기 위한 설정)
+            System.out.println("신규 소셜 회원 유입 -> 회원가입 페이지 리다이렉트 준비");
+            targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/social-success")
+                    .queryParam("isNewUser", "true")
+                    .queryParam("provider", provider)
+                    .queryParam("providerId", providerId)
+                    .build().toUriString();
+        } else {
+            // 2.  이미 연동을 완료한 기존 회원 -> 정상 로그인 (토큰 발급)
+            System.out.println("기존 소셜 연동 회원 로그인 성공");
+            Member member = memberOpt.get();
+            Long memberId = member.getId();
+            String email = member.getEmail();
+            String role = member.getRole().name();
+
+            // JWT 토큰 생성
+            String accessToken = jwtProvider.createAccessToken(memberId, email, role);
+            String refreshToken = jwtProvider.createRefreshToken(email);
+
+            targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/social-success")
+                    .queryParam("isNewUser", "false")
+                    .queryParam("accessToken", accessToken)
+                    .queryParam("refreshToken", refreshToken)
+                    .queryParam("memberId", memberId)
+                    .queryParam("email", email)
+                    .queryParam("role", role)
+                    .build().toUriString();
+        }
 
         System.out.println("리다이렉트 타겟: " + targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
-    }
-
-    private String getEmailFromAttributes(Map<String, Object> attributes) {
-        if (attributes.containsKey("email")) return (String) attributes.get("email");
-        if (attributes.containsKey("kakao_account")) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            return (String) kakaoAccount.get("email");
-        }
-        if (attributes.containsKey("response")) {
-            Map<String, Object> response = (Map<String, Object>) attributes.get("response");
-            return (String) response.get("email");
-        }
-        return null;
     }
 }

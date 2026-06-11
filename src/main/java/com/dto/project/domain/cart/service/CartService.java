@@ -11,7 +11,10 @@ import com.dto.project.domain.cart.repository.CartRepository;
 import com.dto.project.domain.order.entity.ProductSource;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.weighting.entity.WeightLogType;
+import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +23,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CartService {
 
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
+    private final ProductWeightLogService productWeightLogService;
 
     // 장바구니 추가
     public void addCart(Long memberId, CartAddRequest request) {
@@ -48,6 +53,7 @@ public class CartService {
             validateStock(product, updatedQuantity);
 
             cart.increaseQuantity(request.getQuantity());
+            recordCartBehavior(memberId, product.getId());
             return;
         }
 
@@ -68,6 +74,7 @@ public class CartService {
         );
 
         cartRepository.save(newCart);
+        recordCartBehavior(memberId, product.getId());
     }
 
  // 장바구니 조회
@@ -89,7 +96,9 @@ public class CartService {
                             product.getName(),
                             product.getPrice(),
                             cart.getQuantity(),
-                            getThumbnailImage(product)
+                            getThumbnailImage(product),
+                            product.getDiscountRate(),
+                            product.getSalePrice()
                     );
                 })
                 .toList();
@@ -128,11 +137,21 @@ public class CartService {
             throw new IllegalArgumentException("본인의 장바구니 항목만 삭제할 수 있습니다.");
         }
 
+        if (cart.getProduct() != null) {
+            recordCancelCartBehavior(memberId, cart.getProduct().getId());
+        }
+
         cartRepository.delete(cart);
     }
 
     // 장바구니 비우기
     public void clearCart(Long memberId) {
+        List<Cart> carts = cartRepository.findByMemberId(memberId);
+        for (Cart cart : carts) {
+            if (cart.getProduct() != null) {
+                recordCancelCartBehavior(memberId, cart.getProduct().getId());
+            }
+        }
         cartRepository.deleteByMemberId(memberId);
     }
 
@@ -168,6 +187,12 @@ public class CartService {
 
         if (carts.size() != request.getCartIds().size()) {
             throw new IllegalArgumentException("삭제할 수 없는 장바구니 상품이 포함되어 있습니다.");
+        }
+
+        for (Cart cart : carts) {
+            if (cart.getProduct() != null) {
+                recordCancelCartBehavior(memberId, cart.getProduct().getId());
+            }
         }
 
         cartRepository.deleteAll(carts);
@@ -228,5 +253,21 @@ public class CartService {
                                 .findFirst()
                                 .orElse(null)
                 );
+    }
+
+    private void recordCartBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CART);
+        } catch (Exception e) {
+            log.warn("장바구니 behavior log(CART) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+        }
+    }
+
+    private void recordCancelCartBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CANCEL_CART);
+        } catch (Exception e) {
+            log.warn("장바구니 behavior log(CANCEL_CART) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+        }
     }
 }
