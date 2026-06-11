@@ -77,13 +77,12 @@ public class OrderController {
         return ResponseEntity.ok().build();
     }
     
-    // 주문 상품 부분 취소
-    @PostMapping("/{orderId}/items/cancel")
+    @PostMapping("/{orderId}/cancel-items")
     public ResponseEntity<Void> cancelOrderItems(
             @PathVariable Long orderId,
             @RequestBody OrderItemCancelRequest request
     ) {
-        Member member = getLoginMember();
+    	Member member = getLoginMember();
 
         orderService.cancelOrderItems(
                 orderId,

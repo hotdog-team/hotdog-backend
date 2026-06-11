@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.dto.project.domain.product.entity.ProductImage;
 
 @Service
 @RequiredArgsConstructor
@@ -117,6 +118,13 @@ public class OrderService {
         List<OrderItem> temporaryOrderItems = new ArrayList<>();
 
         for (OrderRequest.OrderItemDto itemDto : request.getOrderItems()) {
+        	
+            if (itemDto.getSource() == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "상품 출처(source)는 필수입니다."
+                );
+            }
 
             OrderItem.OrderItemBuilder itemBuilder = OrderItem.builder()
                     .source(itemDto.getSource())
@@ -135,7 +143,19 @@ public class OrderService {
 
                 finalPrice = (int) (product.getPrice() * (1 - (product.getDiscountRate() / 100.0)));
 
-                itemBuilder.product(product);
+                String imageUrl = null;
+
+                if (product.getImages() != null && !product.getImages().isEmpty()) {
+                    imageUrl = product.getImages()
+                            .get(0)
+                            .getImageUrl();
+                }
+
+                itemBuilder.product(product)
+                        .productName(product.getName())
+                        .imageUrl(imageUrl)
+                        .category(itemDto.getCategory())
+                        .description(product.getShortDescription());
 
             } else if (itemDto.getSource() == ProductSource.NAVER) {
                 finalPrice = itemDto.getPrice();
