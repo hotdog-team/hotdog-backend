@@ -255,7 +255,6 @@ public class AdminProductService {
 
         LocalDateTime now = LocalDateTime.now();
         List<Product> productsToSave = new ArrayList<>();
-        List<ProductImage> imagesToSave = new ArrayList<>();
 
         // 1. 모든 카테고리 정보를 한 번에 캐싱하여 DB 조회 최소화
         Set<Long> categoryIds = requests.stream()
@@ -267,7 +266,7 @@ public class AdminProductService {
             categoryMetaTagCache.put(catId, resolveCategoryMetaTagId(catId));
         }
 
-        // 2. Product 및 ProductImage 객체 일괄 생성
+        // 2. Product 객체 일괄 생성
         for (AdminProductRequest req : requests) {
             Product product = new Product();
             product.setCategoryId(req.getCategoryId());
@@ -284,26 +283,25 @@ public class AdminProductService {
             product.setUpdatedAt(now);
 
             productsToSave.add(product);
+        }
+
+        List<Product> savedProducts = productRepository.saveAll(productsToSave);
+
+        // 3. 발급된 상위 Product ID들을 활용하여 이미지 및 MetaTag 매핑 일괄 생성
+        List<ProductImage> imagesToSave = new ArrayList<>();
+        List<MetaTagProduct> mappingsToSave = new ArrayList<>();
+
+        for (int i = 0; i < requests.size(); i++) {
+            Product savedProduct = savedProducts.get(i);
+            AdminProductRequest req = requests.get(i);
 
             if (req.getImageUrl() != null && !req.getImageUrl().isBlank()) {
                 ProductImage productImage = new ProductImage();
-                productImage.setProductId(product.getId());
+                productImage.setProductId(savedProduct.getId());
                 productImage.setImageUrl(req.getImageUrl());
                 productImage.setMain(true);
                 imagesToSave.add(productImage);
             }
-        }
-
-        // 3. Product 및 Image 일괄 저장
-        productRepository.saveAll(productsToSave);
-        productImageRepository.saveAll(imagesToSave);
-
-        // 4. MetaTag 매핑 일괄 생성 및 저장
-        List<MetaTagProduct> mappingsToSave = new ArrayList<>();
-
-        for (int i = 0; i < requests.size(); i++) {
-            Product savedProduct = productsToSave.get(i);
-            AdminProductRequest req = requests.get(i);
 
             Long categoryTagId = categoryMetaTagCache.get(req.getCategoryId());
             mappingsToSave.add(MetaTagProduct.builder()
@@ -326,6 +324,8 @@ public class AdminProductService {
             }
         }
 
+        // 4. 발급된 ID를 품은 이미지와 태그 매핑 데이터들을 최종 일괄 저장
+        productImageRepository.saveAll(imagesToSave);
         metaTagProductRepository.saveAll(mappingsToSave);
     }
 }
