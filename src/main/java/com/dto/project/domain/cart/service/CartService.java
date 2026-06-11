@@ -94,7 +94,9 @@ public class CartService {
                             product.getName(),
                             product.getPrice(),
                             cart.getQuantity(),
-                            getThumbnailImage(product)
+                            getThumbnailImage(product),
+                            product.getDiscountRate(),
+                            product.getSalePrice()
                     );
                 })
                 .toList();

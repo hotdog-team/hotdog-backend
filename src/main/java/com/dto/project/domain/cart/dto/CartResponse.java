@@ -13,4 +13,6 @@ public class CartResponse {
     private Integer price;
     private Integer quantity;
     private String thumbnailImage;
+    private Integer discountRate;
+    private Integer salePrice;
 }
