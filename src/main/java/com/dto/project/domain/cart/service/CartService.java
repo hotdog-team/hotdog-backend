@@ -53,6 +53,8 @@ public class CartService {
 
         // 재고 초과 검증
         validateStock(product, request.getQuantity());
+        
+        String imageUrl = getThumbnailImage(product);
 
         Cart newCart = new Cart(
                 memberId,
@@ -60,7 +62,7 @@ public class CartService {
                 product,
                 null,
                 product.getName(),
-                null,
+                imageUrl,
                 product.getPrice(),
                 request.getQuantity()
         );

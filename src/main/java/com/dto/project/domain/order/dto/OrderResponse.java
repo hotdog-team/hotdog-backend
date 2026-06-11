@@ -21,6 +21,13 @@ public class OrderResponse {
     private String imageUrl;
     private String category;
     private String description;
+    // 배송/결제 정보
+    private String receiverName;
+    private String receiverPhone;
+    private String deliveryAddress;
+    private String requestMessage;
+    private int deliveryFee;
+    private String paymentMethod;
 
     // 다건 주문 상품 목록
     private List<OrderItemResponse> orderItems;
@@ -30,6 +37,15 @@ public class OrderResponse {
         this.orderStatus = order.getStatus().name();
         this.totalPrice = order.getTotalAmount();
         this.orderDate = order.getCreatedAt();
+        this.receiverName = order.getReceiverName();
+        this.receiverPhone = order.getReceiverPhone();
+        this.deliveryAddress = order.getDeliveryAddress();
+        this.requestMessage = order.getRequestMessage();
+        this.deliveryFee = order.getDeliveryFee();
+        
+        if (order.getPaymentMethod() != null) {
+            this.paymentMethod = order.getPaymentMethod().name();
+        }
 
         if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
             OrderItem firstItem = order.getOrderItems().get(0);
