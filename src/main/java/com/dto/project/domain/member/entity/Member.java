@@ -15,6 +15,12 @@ import java.time.LocalDateTime;
 @Table(name = "members")
 public class Member {
 
+    @Column(name = "provider")
+    private String provider;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

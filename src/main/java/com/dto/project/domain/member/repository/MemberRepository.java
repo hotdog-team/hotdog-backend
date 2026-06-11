@@ -39,4 +39,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Page<Member> searchMembers(@Param("keyword") String keyword,
                                @Param("status") MemberStatus status,
                                Pageable pageable);
+
+    Optional<Member> findByProviderAndProviderId(String provider, String providerId);
 }
