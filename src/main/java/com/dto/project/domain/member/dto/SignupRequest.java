@@ -13,6 +13,9 @@ import java.util.List;
 @NoArgsConstructor
 public class SignupRequest {
 
+    private String provider;
+    private String providerId;
+
     // 1. 기본 필수 정보
     @NotBlank(message = "이메일은 필수 입력값입니다.")
     @Email(message = "올바른 이메일 형식이어야 합니다.")

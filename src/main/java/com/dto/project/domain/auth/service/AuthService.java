@@ -47,6 +47,8 @@ public class AuthService {
                     .isJobRecommendEnabled(request.getIsJobRecommendEnabled())
                     .role(MemberRole.ROLE_USER)
                     .status(MemberStatus.ACTIVE)
+                    .provider(request.getProvider())
+                    .providerId(request.getProviderId())
                     .build());
 
             memberTagWeightService.initializeFromSignup(member, request.getProfileTagIds());
