@@ -243,4 +243,89 @@ public class AdminProductService {
 
         return categoryTag.getId();
     }
+
+    /**
+     * 4. 네이버 상품 다량(Bulk) 등록 전용 메서드
+     */
+    @Transactional
+    public void createProductsBulk(List<AdminProductRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Product> productsToSave = new ArrayList<>();
+        List<ProductImage> imagesToSave = new ArrayList<>();
+
+        // 1. 모든 카테고리 정보를 한 번에 캐싱하여 DB 조회 최소화
+        Set<Long> categoryIds = requests.stream()
+                .map(AdminProductRequest::getCategoryId)
+                .collect(Collectors.toSet());
+
+        Map<Long, Long> categoryMetaTagCache = new HashMap<>();
+        for (Long catId : categoryIds) {
+            categoryMetaTagCache.put(catId, resolveCategoryMetaTagId(catId));
+        }
+
+        // 2. Product 및 ProductImage 객체 일괄 생성
+        for (AdminProductRequest req : requests) {
+            Product product = new Product();
+            product.setCategoryId(req.getCategoryId());
+            product.setName(req.getName());
+            product.setPrice(req.getPrice());
+            product.setDiscountRate(req.getDiscountRate() != null ? req.getDiscountRate() : 0);
+            product.setDeliveryFee(req.getDeliveryFee() != null ? req.getDeliveryFee() : 0);
+            product.setStockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0);
+            product.setShortDescription(req.getShortDescription());
+            product.setDescription(req.getDescription());
+            product.setBrand(req.getBrand());
+            product.setStatus("ON_SALE");
+            product.setCreatedAt(now);
+            product.setUpdatedAt(now);
+
+            productsToSave.add(product);
+
+            if (req.getImageUrl() != null && !req.getImageUrl().isBlank()) {
+                ProductImage productImage = new ProductImage();
+                productImage.setProductId(product.getId());
+                productImage.setImageUrl(req.getImageUrl());
+                productImage.setMain(true);
+                imagesToSave.add(productImage);
+            }
+        }
+
+        // 3. Product 및 Image 일괄 저장
+        productRepository.saveAll(productsToSave);
+        productImageRepository.saveAll(imagesToSave);
+
+        // 4. MetaTag 매핑 일괄 생성 및 저장
+        List<MetaTagProduct> mappingsToSave = new ArrayList<>();
+
+        for (int i = 0; i < requests.size(); i++) {
+            Product savedProduct = productsToSave.get(i);
+            AdminProductRequest req = requests.get(i);
+
+            Long categoryTagId = categoryMetaTagCache.get(req.getCategoryId());
+            mappingsToSave.add(MetaTagProduct.builder()
+                    .product(savedProduct)
+                    .metaTag(metaTagRepository.getReferenceById(categoryTagId))
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build());
+
+            if(req.getMetaTagIds() != null && !req.getMetaTagIds().isEmpty()){
+                List<MetaTagEntity> validTags = validateManualMetaTags(req.getMetaTagIds());
+                for(MetaTagEntity tag : validTags){
+                    mappingsToSave.add(MetaTagProduct.builder()
+                            .product(savedProduct)
+                            .metaTag(tag)
+                            .createdAt(now)
+                            .updatedAt(now)
+                            .build());
+                }
+            }
+        }
+
+        metaTagProductRepository.saveAll(mappingsToSave);
+    }
 }
