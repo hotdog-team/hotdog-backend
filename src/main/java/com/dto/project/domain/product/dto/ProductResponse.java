@@ -11,6 +11,7 @@ public class ProductResponse {
 
     private Long id;
     private Long categoryId;
+    private String categoryName;
     private String name;
 
     private Integer originPrice;
@@ -35,6 +36,7 @@ public class ProductResponse {
     public ProductResponse(Product product) {
         this.id = product.getId();
         this.categoryId = product.getCategoryId();
+        this.categoryName = product.getCategoryName();
         this.name = product.getName();
 
         this.originPrice = product.getPrice();
