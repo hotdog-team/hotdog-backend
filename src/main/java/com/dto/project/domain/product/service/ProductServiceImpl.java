@@ -61,8 +61,8 @@ public class ProductServiceImpl implements ProductService {
             Comparator<Product> comparator = switch (sort) {
                 case LATEST    -> Comparator.comparing(Product::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(Product::getId, Comparator.reverseOrder());
-                case LOW_PRICE -> Comparator.comparing(Product::getPrice, Comparator.nullsLast(Comparator.naturalOrder()));
-                case HIGH_PRICE-> Comparator.comparing(Product::getPrice, Comparator.nullsLast(Comparator.reverseOrder()));
+                case LOW_PRICE -> Comparator.comparing(Product::getSalePrice, Comparator.nullsLast(Comparator.naturalOrder()));
+                case HIGH_PRICE-> Comparator.comparing(Product::getSalePrice, Comparator.nullsLast(Comparator.reverseOrder()));
                 case SALES     -> Comparator.comparing(Product::getSalesCount, Comparator.nullsLast(Comparator.reverseOrder()));
                 case POPULAR   -> Comparator.comparing(Product::getWeightScore, Comparator.nullsLast(Comparator.reverseOrder()));
                 default        -> Comparator.comparing(Product::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()));

@@ -21,6 +21,8 @@ public class ProductListResponse {
     private String imageUrl;
     private Double averageRate;
     private Integer reviewCount;
+    private Integer originPrice;
+    private Integer salePrice;
 
     public ProductListResponse(Product product) {
         this.id = product.getId();
@@ -37,6 +39,9 @@ public class ProductListResponse {
 
         this.averageRate = product.getAverageRate();
         this.reviewCount = product.getReviewCount();
+
+        this.originPrice = product.getPrice();
+        this.salePrice = product.getSalePrice();
         
         this.imageUrl = product.getImages() == null
                 ? ""

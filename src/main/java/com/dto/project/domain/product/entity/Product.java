@@ -61,7 +61,7 @@ public class Product {
     private Long salesCount = 0L;
 
     @Column(name = "weight_score")
-    private Double weightScore;
+    private Double weightScore = 0.0;
 
     private String status;
 
@@ -149,6 +149,11 @@ public class Product {
         if (this.status == null) {
             this.status = "ON_SALE";
         }
+    }
+
+    //SalePrice를 구한다
+    public int getSalePrice() {
+        return (int) (price * (1 - (discountRate / 100.0)));
     }
 
     public void updateReviewStats(Double averageRate, Integer reviewCount) {
