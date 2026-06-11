@@ -46,12 +46,15 @@ public class ProductWeightLogService {
     private final ObjectMapper objectMapper;
     private final SecurityUtil securityUtil;
 
-    //기록 - request 전체 받아 분할함
-    //TODO: 조회 및 구매에 있어서 재행동할 경우 +@
-    //TODO: 다수 구매/취소 처리 관련
+    // request 전체 받아 분할
     @Transactional
     public void recordLogs(ProductWeightLogRequest request) {
-        Long memberId = securityUtil.resolveMemberId();
+        recordLogs(securityUtil.resolveMemberId(), request);
+    }
+
+    // memberId를 명시하여 처리(장바구니 및 구매는 백엔드 처리하도록 함)
+    @Transactional
+    public void recordLogs(Long memberId, ProductWeightLogRequest request) {
         Long productId = request.getProductId();
 
         if (!productRepository.existsById(productId)) {
@@ -163,6 +166,20 @@ public class ProductWeightLogService {
         }
 
         redisTemplate.opsForList().leftPush(BEHAVIOR_QUEUE_KEY, json);
+    }
+
+    public void recordBehavior(Long memberId, Long productId, WeightLogType actionType) {
+        ProductWeightLogRequest request = new ProductWeightLogRequest();
+        request.setProductId(productId);
+        request.setActionType(actionType);
+        request.setEventTimeStamp(LocalDateTime.now());
+        recordLogs(memberId, request);
+    }
+
+    public void recordBehaviors(Long memberId, Iterable<Long> productIds, WeightLogType actionType) {
+        for (Long productId : productIds) {
+            recordBehavior(memberId, productId, actionType);
+        }
     }
 
     //메서드 분리로 안정성 강화
