@@ -1,12 +1,13 @@
 package com.dto.project.domain.search.dto;
 
 import com.dto.project.domain.search.entity.SearchKeyword;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-
 @Getter
 @Builder
+@AllArgsConstructor
 public class PopularKeywordResponse {
 
     private String keyword;
