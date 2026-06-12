@@ -54,8 +54,9 @@ public class ReviewService {
 
         reviewRepository.save(review);
 
-        if (orderItem.getProduct() != null) {
-            updateProductReviewStats(orderItem.getProduct());
+        Product product = orderItem.getProduct();
+        if (product != null) {
+            applyNewReviewStats(product, request.getRating());
         }
     }
     
@@ -92,7 +93,9 @@ public class ReviewService {
                 request.getImageUrl()
                    
         );
-        updateProductReviewStats(review.getProduct());
+        if (review.getProduct() != null) {
+            recalculateProductReviewStats(review.getProduct());
+        }
     }
 
     public void deleteReview(Long memberId, Long reviewId) {
@@ -106,7 +109,7 @@ public class ReviewService {
         review.changeStatus("DELETED");
         
         if (review.getProduct() != null) {
-            updateProductReviewStats(review.getProduct());
+            recalculateProductReviewStats(review.getProduct());
         }
     }
 
@@ -120,17 +123,29 @@ public class ReviewService {
         }
     }
     
-    private void updateProductReviewStats(Product product) {
+    private void applyNewReviewStats(Product product, Integer newRating) {
+        int oldCount = product.getReviewCount() != null ? product.getReviewCount() : 0;
+        double oldAverage = product.getAverageRate() != null ? product.getAverageRate() : 0.0;
 
-        Double averageRate =
-                reviewRepository.findAverageRateByProductId(product.getId());
+        int newCount = oldCount + 1;
+        double newAverage = (oldCount * oldAverage + newRating) / newCount;
 
-        Integer reviewCount =
-                Math.toIntExact(reviewRepository.countByProduct_IdAndStatus(product.getId(), "ACTIVE"));
+        product.updateReviewStats(newAverage, newCount);
+        productRepository.save(product);
+    }
+
+    private void recalculateProductReviewStats(Product product) {
+        long activeReviewCount =
+                reviewRepository.countByProduct_IdAndStatus(product.getId(), "ACTIVE");
+
+        Double averageRate = activeReviewCount > 0
+                ? reviewRepository.findAverageRateByProductId(product.getId())
+                : 0.0;
 
         product.updateReviewStats(
                 averageRate,
-                reviewCount
+                Math.toIntExact(activeReviewCount)
         );
+        productRepository.save(product);
     }
 }
