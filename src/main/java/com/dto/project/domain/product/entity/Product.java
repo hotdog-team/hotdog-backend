@@ -108,7 +108,8 @@ public class Product {
 
     // 해당 상품 판매량 증가
     public void increaseSalesCount(int quantity) {
-        this.salesCount += quantity;
+        long currentSales = this.salesCount != null ? this.salesCount : 0L;
+        this.salesCount = currentSales + quantity;
     }
 
     // 상태 변경
@@ -122,9 +123,11 @@ public class Product {
         this.stockQuantity += quantity;
     }
 
-    // 해당 상품 판매량 감수
+    // 해당 상품 판매량 감소
     public void decreaseSalesCount(int quantity) {
-        this.salesCount -= quantity;
+        long currentSales = this.salesCount != null ? this.salesCount : 0L;
+        this.salesCount = currentSales - quantity;
+        if (this.salesCount < 0) { this.salesCount = 0L; }
     }
 
     public void updateProductInfo(
