@@ -6,6 +6,7 @@ import com.dto.project.domain.member.entity.Member;
 import com.dto.project.domain.order.dto.CheckoutRequest;
 import com.dto.project.domain.order.dto.CheckoutResponse;
 import com.dto.project.domain.order.dto.OrderRequest;
+import com.dto.project.domain.order.dto.OrderReturnRequest;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.order.entity.OrderItemStatus;
@@ -350,5 +351,26 @@ public class OrderService {
         } catch (Exception e) {
             log.warn("주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
         }
+    }
+    
+    // 반품
+    @Transactional
+    public void requestReturn(
+            Long orderId,
+            Member member,
+            OrderReturnRequest request
+    ) {
+
+        Order order = getOrderDetail(orderId, member);
+
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new IllegalArgumentException("배송 완료 주문만 반품 신청할 수 있습니다.");
+        }
+
+        if (request.getReason() == null || request.getReason().isBlank()) {
+            throw new IllegalArgumentException("반품 사유를 선택해 주세요.");
+        }
+
+        order.updateStatus(OrderStatus.RETURN_REQUESTED);
     }
 }

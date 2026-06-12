@@ -7,6 +7,7 @@ import com.dto.project.domain.order.dto.CheckoutResponse;
 import com.dto.project.domain.order.dto.OrderItemCancelRequest;
 import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.dto.OrderResponse;
+import com.dto.project.domain.order.dto.OrderReturnRequest;
 import com.dto.project.domain.order.entity.OrderStatus;
 import com.dto.project.domain.order.service.OrderService;
 import com.dto.project.global.util.SecurityUtil;
@@ -130,4 +131,18 @@ public class OrderController {
 
         return ResponseEntity.ok(orderId);
     }
+    
+    // 반품
+    @PostMapping("/{orderId}/return-request")
+    public ResponseEntity<Void> requestReturn(
+            @PathVariable Long orderId,
+            @RequestBody OrderReturnRequest request
+    ) {
+
+		Member member = getLoginMember();
+
+		orderService.requestReturn(orderId, member, request);
+
+		return ResponseEntity.ok().build();
+	}
 }
