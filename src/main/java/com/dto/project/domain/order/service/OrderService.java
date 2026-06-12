@@ -3,16 +3,8 @@ package com.dto.project.domain.order.service;
 import com.dto.project.domain.cart.entity.Cart;
 import com.dto.project.domain.cart.repository.CartRepository;
 import com.dto.project.domain.member.entity.Member;
-import com.dto.project.domain.order.dto.CheckoutRequest;
-import com.dto.project.domain.order.dto.CheckoutResponse;
-import com.dto.project.domain.order.dto.OrderRequest;
-import com.dto.project.domain.order.dto.OrderReturnRequest;
-import com.dto.project.domain.order.dto.OrderResponse;
-import com.dto.project.domain.order.entity.Order;
-import com.dto.project.domain.order.entity.OrderItem;
-import com.dto.project.domain.order.entity.OrderItemStatus;
-import com.dto.project.domain.order.entity.OrderStatus;
-import com.dto.project.domain.order.entity.ProductSource;
+import com.dto.project.domain.order.dto.*;
+import com.dto.project.domain.order.entity.*;
 import com.dto.project.domain.order.repository.OrderItemRepository;
 import com.dto.project.domain.order.repository.OrderRepository;
 import com.dto.project.domain.product.entity.Product;
@@ -32,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.dto.project.domain.product.entity.ProductImage;
 
 @Service
 @RequiredArgsConstructor
@@ -76,6 +67,7 @@ public class OrderService {
                     .quantity(cart.getQuantity())
                     .unitPrice(unitPrice)
                     .totalPrice(totalPrice)
+                    .discountRate(cart.getProduct().getDiscountRate())
                     .build());
 
             totalAmount += totalPrice;
@@ -110,6 +102,7 @@ public class OrderService {
                 .quantity(quantity)
                 .unitPrice(unitPrice)
                 .totalPrice(totalPrice)
+                .discountRate(product.getDiscountRate())
                 .build();
 
         return CheckoutResponse.builder()
@@ -126,7 +119,7 @@ public class OrderService {
         List<OrderItem> temporaryOrderItems = new ArrayList<>();
 
         for (OrderRequest.OrderItemDto itemDto : request.getOrderItems()) {
-        	
+
             if (itemDto.getSource() == null) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
@@ -202,6 +195,10 @@ public class OrderService {
 
         orderRepository.save(order);
 
+        if (order.getTotalAmount() <= 0) {
+            order.updateStatus(OrderStatus.COMPLETED);
+            orderRepository.save(order);
+        }
         for (OrderItem orderItem : temporaryOrderItems) {
             if (orderItem.getProduct() != null) {
                 recordBuyBehavior(member.getId(), orderItem.getProduct().getId());
@@ -247,14 +244,13 @@ public class OrderService {
         return order;
     }
 
- // 전체 주문 취소
+    // 전체 주문 취소
     @Transactional
     public void cancelOrder(Long orderId, Member member) {
 
         Order order = getOrderDetail(orderId, member);
         // 배송중이거나 배송완료 상태는 취소 불가
-        if (order.getStatus() == OrderStatus.IN_TRANSIT ||
-            order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.IN_TRANSIT || order.getStatus() == OrderStatus.DELIVERED) {
             throw new IllegalArgumentException("이미 배송 중이거나 완료된 상품은 취소할 수 없습니다.");
         }
 
@@ -283,8 +279,8 @@ public class OrderService {
         // 주문 상태 취소 완료
         order.cancel();
     }
-    
- // 주문 상품 부분 취소
+
+    // 주문 상품 부분 취소
     @Transactional
     public void cancelOrderItems(
             Long orderId,
@@ -295,8 +291,7 @@ public class OrderService {
         Order order = getOrderDetail(orderId, member);
 
         // 배송중이거나 배송완료 상태는 취소 불가
-        if (order.getStatus() == OrderStatus.IN_TRANSIT ||
-            order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.IN_TRANSIT || order.getStatus() == OrderStatus.DELIVERED) {
 
             throw new IllegalArgumentException("이미 배송 중이거나 완료된 상품은 취소할 수 없습니다.");
         }

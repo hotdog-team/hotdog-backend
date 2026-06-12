@@ -25,5 +25,6 @@ public class CheckoutResponse {
         private Integer quantity;
         private Integer unitPrice;
         private Integer totalPrice;
+        private Integer discountRate;
     }
 }
