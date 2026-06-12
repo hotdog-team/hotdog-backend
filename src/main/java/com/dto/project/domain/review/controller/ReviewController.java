@@ -27,6 +27,13 @@ public class ReviewController {
         return reviewService.getProductReviews(productId, pageable);
     }
 
+    // 주문 상품 리뷰 조회
+    @GetMapping("/orders/items/{orderItemId}/reviews")
+    public ReviewResponse getReviewByOrderItem(@PathVariable Long orderItemId) {
+        Long memberId = securityUtil.resolveMemberId();
+        return reviewService.getReviewByOrderItem(memberId, orderItemId);
+    }
+
     // 리뷰 작성
     @PostMapping("/orders/items/{orderItemId}/reviews")
     public String createReview(
