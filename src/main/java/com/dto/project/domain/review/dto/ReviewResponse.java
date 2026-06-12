@@ -17,6 +17,7 @@ public class ReviewResponse {
     private String memberName;
     private Integer rating;
     private String content;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -29,6 +30,7 @@ public class ReviewResponse {
                 .memberName(review.getMember().getName())
                 .rating(review.getRating())
                 .content(review.getContent())
+                .imageUrl(review.getImageUrl())
                 .createdAt(review.getCreatedAt())
                 .updatedAt(review.getUpdatedAt())
                 .build();
