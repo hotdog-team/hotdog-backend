@@ -3,6 +3,7 @@ package com.dto.project.domain.order.dto;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.order.entity.ProductSource;
+import com.dto.project.domain.review.repository.ReviewRepository;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class OrderResponse {
     // 다건 주문 상품 목록
     private List<OrderItemResponse> orderItems;
 
-    public OrderResponse(Order order) {
+    public OrderResponse(Order order, ReviewRepository reviewRepository) {
         this.orderId = order.getId();
         this.orderStatus = order.getStatus().name();
         this.totalPrice = order.getTotalAmount();
@@ -69,7 +70,10 @@ public class OrderResponse {
             // 다건 주문 상품 목록 추가
             this.orderItems = order.getOrderItems()
                     .stream()
-                    .map(OrderItemResponse::new)
+                    .map(item -> new OrderItemResponse(
+                            item,
+                            reviewRepository.existsByOrderItem(item)
+                    ))
                     .toList();
         }
     }
@@ -86,9 +90,11 @@ public class OrderResponse {
         private int priceAtOrder;
         private String source;
         private String status;
+        private boolean hasReview;
 
-        public OrderItemResponse(OrderItem orderItem) {
+        public OrderItemResponse(OrderItem orderItem, boolean hasReview) {
             this.orderItemId = orderItem.getId();
+            this.hasReview = hasReview;
             this.quantity = orderItem.getQuantity();
             this.priceAtOrder = orderItem.getPriceAtOrder();
             this.source = orderItem.getSource().name();

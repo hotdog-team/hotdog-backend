@@ -47,7 +47,7 @@ public class OrderController {
 
         Page<OrderResponse> orders =
                 orderService.getOrderHistory(member, status, pageable)
-                        .map(OrderResponse::new);
+                        .map(orderService::toOrderResponse);
 
         return ResponseEntity.ok(orders);
     }
@@ -60,7 +60,7 @@ public class OrderController {
         Member member = getLoginMember();
 
         return ResponseEntity.ok(
-                new OrderResponse(
+                orderService.toOrderResponse(
                         orderService.getOrderDetail(orderId, member)
                 )
         );

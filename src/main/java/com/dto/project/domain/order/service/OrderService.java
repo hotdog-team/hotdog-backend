@@ -7,6 +7,7 @@ import com.dto.project.domain.order.dto.CheckoutRequest;
 import com.dto.project.domain.order.dto.CheckoutResponse;
 import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.dto.OrderReturnRequest;
+import com.dto.project.domain.order.dto.OrderResponse;
 import com.dto.project.domain.order.entity.Order;
 import com.dto.project.domain.order.entity.OrderItem;
 import com.dto.project.domain.order.entity.OrderItemStatus;
@@ -16,6 +17,7 @@ import com.dto.project.domain.order.repository.OrderItemRepository;
 import com.dto.project.domain.order.repository.OrderRepository;
 import com.dto.project.domain.product.entity.Product;
 import com.dto.project.domain.product.repository.ProductRepository;
+import com.dto.project.domain.review.repository.ReviewRepository;
 import com.dto.project.domain.weighting.entity.WeightLogType;
 import com.dto.project.domain.weighting.service.ProductWeightLogService;
 import com.dto.project.global.exception.DefaultErrorDetailMessages;
@@ -43,7 +45,12 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductWeightLogService productWeightLogService;
-    
+    private final ReviewRepository reviewRepository;
+
+    public OrderResponse toOrderResponse(Order order) {
+        return new OrderResponse(order, reviewRepository);
+    }
+
     // 장바구니 기반 주문서 조회
     public CheckoutResponse createCartCheckout(CheckoutRequest request, Member member) {
 
@@ -345,14 +352,7 @@ public class OrderService {
         }
     }
 
-    private void recordCancelBuyBehavior(Long memberId, Long productId) {
-        try {
-            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CANCEL_BUY);
-        } catch (Exception e) {
-            log.warn("주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
-        }
-    }
-    
+
     // 반품
     @Transactional
     public void requestReturn(
@@ -372,5 +372,13 @@ public class OrderService {
         }
 
         order.updateStatus(OrderStatus.RETURN_REQUESTED);
+    }
+
+    private void recordCancelBuyBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CANCEL_BUY);
+        } catch (Exception e) {
+            log.warn("주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+        }
     }
 }
