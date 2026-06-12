@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
@@ -31,8 +32,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             Pageable pageable
     );
 
-    // 3. [공통] 해당 주문건(OrderItem)으로 작성된 리뷰가 이미 존재하는지 체크
-    boolean existsByOrderItem(OrderItem orderItem);
+    // 3. [공통] 해당 주문건(OrderItem)으로 작성된 ACTIVE 리뷰 존재 여부
+    boolean existsByOrderItemAndStatus(OrderItem orderItem, String status);
+
+    Optional<Review> findByOrderItemAndStatus(OrderItem orderItem, String status);
+
+    Optional<Review> findByOrderItem(OrderItem orderItem);
     
     
     @Query("""

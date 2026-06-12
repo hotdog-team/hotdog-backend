@@ -18,7 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +39,21 @@ public class ReviewService {
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new IllegalArgumentException("주문 상품을 찾을 수 없습니다."));
 
-        if (reviewRepository.existsByOrderItem(orderItem)) {
-            throw new IllegalArgumentException("이미 해당 주문 상품에 리뷰를 작성했습니다.");
+        Optional<Review> existingReview = reviewRepository.findByOrderItem(orderItem);
+        if (existingReview.isPresent()) {
+            Review review = existingReview.get();
+            if ("ACTIVE".equals(review.getStatus())) {
+                throw new IllegalArgumentException("이미 해당 주문 상품에 리뷰를 작성했습니다.");
+            }
+
+            review.update(request.getRating(), request.getContent(), request.getImageUrl());
+            review.changeStatus("ACTIVE");
+
+            Product product = orderItem.getProduct();
+            if (product != null) {
+                recalculateProductReviewStats(product);
+            }
+            return;
         }
 
         Review review = Review.builder()
@@ -58,6 +71,21 @@ public class ReviewService {
         if (product != null) {
             applyNewReviewStats(product, request.getRating());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewResponse getReviewByOrderItem(Long memberId, Long orderItemId) {
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new IllegalArgumentException("주문 상품을 찾을 수 없습니다."));
+
+        if (!orderItem.getOrder().getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인 주문의 리뷰만 조회할 수 있습니다.");
+        }
+
+        Review review = reviewRepository.findByOrderItemAndStatus(orderItem, "ACTIVE")
+                .orElseThrow(() -> new IllegalArgumentException("작성된 리뷰를 찾을 수 없습니다."));
+
+        return ReviewResponse.from(review);
     }
     
     @Transactional(readOnly = true)

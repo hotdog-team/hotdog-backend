@@ -72,7 +72,7 @@ public class OrderResponse {
                     .stream()
                     .map(item -> new OrderItemResponse(
                             item,
-                            reviewRepository.existsByOrderItem(item)
+                            reviewRepository.existsByOrderItemAndStatus(item, "ACTIVE")
                     ))
                     .toList();
         }

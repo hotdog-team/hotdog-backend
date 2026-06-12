@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/members/me").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
                         // 리뷰 관련 설정
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/*/reviews").permitAll()
