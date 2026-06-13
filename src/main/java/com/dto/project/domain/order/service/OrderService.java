@@ -366,7 +366,9 @@ public class OrderService {
     ) {
         Order order = getOrderDetail(orderId, member);
 
-        if (order.getStatus() != OrderStatus.DELIVERED) {
+        if (order.getStatus() != OrderStatus.DELIVERED
+                && order.getStatus() != OrderStatus.PARTIAL_RETURN_REQUESTED
+                && order.getStatus() != OrderStatus.PARTIAL_RETURN_COMPLETED) {
             throw new IllegalArgumentException("배송 완료 주문만 반품 신청할 수 있습니다.");
         }
 
