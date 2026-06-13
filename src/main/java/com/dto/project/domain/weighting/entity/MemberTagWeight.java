@@ -52,6 +52,8 @@ public class MemberTagWeight {
     public void adjustWeightScore(double delta) {
         double current = this.weightScore != null ? this.weightScore : 0;
         this.weightScore = current + delta;
+        // 행동 점수 반영 시 effective_score도 동기화 (조회는 effective_score 사용, 감쇠 배치만 이후 조정)
+        this.effectiveScore = this.weightScore;
     }
 
     //행동 점수 0점 처리
