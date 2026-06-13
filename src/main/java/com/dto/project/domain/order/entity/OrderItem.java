@@ -82,4 +82,32 @@ public class OrderItem {
 
         this.cancelledAt = LocalDateTime.now();
     }
+    
+ // 주문 상품 반품 신청
+    public void requestReturn() {
+
+        if (this.status == OrderItemStatus.CANCELLED) {
+            throw new IllegalStateException("취소된 상품은 반품할 수 없습니다.");
+        }
+
+        if (this.status == OrderItemStatus.RETURN_REQUESTED) {
+            throw new IllegalStateException("이미 반품 신청된 상품입니다.");
+        }
+
+        if (this.status == OrderItemStatus.RETURN_COMPLETED) {
+            throw new IllegalStateException("이미 반품 완료된 상품입니다.");
+        }
+
+        this.status = OrderItemStatus.RETURN_REQUESTED;
+    }
+    
+ // 주문 상품 반품 완료
+    public void completeReturn() {
+
+        if (this.status != OrderItemStatus.RETURN_REQUESTED) {
+            throw new IllegalStateException("반품 신청 상태의 상품만 반품 완료할 수 있습니다.");
+        }
+
+        this.status = OrderItemStatus.RETURN_COMPLETED;
+    }
 }

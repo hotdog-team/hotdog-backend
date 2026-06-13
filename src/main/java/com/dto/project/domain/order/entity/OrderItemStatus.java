@@ -3,5 +3,7 @@ package com.dto.project.domain.order.entity;
 public enum OrderItemStatus {
 
     ORDERED,
-    CANCELLED
+    CANCELLED,
+    RETURN_REQUESTED,
+    RETURN_COMPLETED
 }
