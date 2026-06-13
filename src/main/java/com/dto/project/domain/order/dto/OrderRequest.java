@@ -12,7 +12,8 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderRequest {
 
-    private List<OrderItemDto> orderItems;
+	private List<Long> cartItemIds;
+	private List<OrderItemDto> orderItems;
     private String receiverName;
     private String receiverPhone;
     private String deliveryAddress; // 배송지 주소

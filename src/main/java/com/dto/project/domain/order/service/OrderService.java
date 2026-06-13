@@ -205,6 +205,15 @@ public class OrderService {
             }
         }
 
+        if (request.getCartItemIds() != null
+                && !request.getCartItemIds().isEmpty()) {
+
+            cartRepository.deleteByIdInAndMemberId(
+                    request.getCartItemIds(),
+                    member.getId()
+            );
+        }
+        
         return order.getId();
     }
 
