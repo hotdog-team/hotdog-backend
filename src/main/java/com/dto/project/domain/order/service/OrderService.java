@@ -357,17 +357,18 @@ public class OrderService {
     }
 
 
-    // 반품
+ // 반품
     @Transactional
     public void requestReturn(
             Long orderId,
             Member member,
             OrderReturnRequest request
     ) {
-
         Order order = getOrderDetail(orderId, member);
 
-        if (order.getStatus() != OrderStatus.DELIVERED) {
+        if (order.getStatus() != OrderStatus.DELIVERED
+                && order.getStatus() != OrderStatus.PARTIAL_RETURN_REQUESTED
+                && order.getStatus() != OrderStatus.PARTIAL_RETURN_COMPLETED) {
             throw new IllegalArgumentException("배송 완료 주문만 반품 신청할 수 있습니다.");
         }
 
@@ -375,14 +376,154 @@ public class OrderService {
             throw new IllegalArgumentException("반품 사유를 선택해 주세요.");
         }
 
+        for (OrderItem orderItem : order.getOrderItems()) {
+            if (orderItem.getStatus() == OrderItemStatus.ORDERED) {
+                orderItem.requestReturn();
+            }
+        }
+
         order.updateStatus(OrderStatus.RETURN_REQUESTED);
     }
+    
+    @Transactional
+    public void requestReturnItems(
+            Long orderId,
+            List<Long> orderItemIds,
+            Member member,
+            OrderReturnRequest request
+    ) {
 
+        Order order = getOrderDetail(orderId, member);
+
+        if (order.getStatus() != OrderStatus.DELIVERED
+                && order.getStatus() != OrderStatus.PARTIAL_RETURN_COMPLETED) {
+
+            throw new IllegalArgumentException(
+                    "배송 완료 주문만 반품 신청할 수 있습니다."
+            );
+        }
+
+        if (request.getReason() == null || request.getReason().isBlank()) {
+            throw new IllegalArgumentException(
+                    "반품 사유를 선택해 주세요."
+            );
+        }
+
+        List<OrderItem> returnItems =
+                orderItemRepository.findByOrderIdAndIdIn(
+                        orderId,
+                        orderItemIds
+                );
+
+        if (returnItems.size() != orderItemIds.size()) {
+            throw new IllegalArgumentException(
+                    "반품할 주문 상품 정보가 올바르지 않습니다."
+            );
+        }
+
+        for (OrderItem orderItem : returnItems) {
+
+            orderItem.requestReturn();
+        }
+
+        boolean hasOrderedItem =
+                orderItemRepository.existsByOrderIdAndStatus(
+                        orderId,
+                        OrderItemStatus.ORDERED
+                );
+
+        if (hasOrderedItem) {
+
+            order.updateStatus(
+                    OrderStatus.PARTIAL_RETURN_REQUESTED
+            );
+
+        } else {
+
+            order.updateStatus(
+                    OrderStatus.RETURN_REQUESTED
+            );
+        }
+    }
+    
+ // 전체 반품 완료
+    @Transactional
+    public void completeReturn(Long orderId, Member member) {
+
+        Order order = getOrderDetail(orderId, member);
+
+        if (order.getStatus() != OrderStatus.RETURN_REQUESTED) {
+            throw new IllegalArgumentException("반품 신청 상태의 주문만 반품 완료할 수 있습니다.");
+        }
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            if (orderItem.getStatus() == OrderItemStatus.RETURN_REQUESTED) {
+                orderItem.completeReturn();
+            }
+        }
+
+        order.updateStatus(OrderStatus.RETURN_COMPLETED);
+    }
+
+    // 주문 상품 부분 반품 완료
+    @Transactional
+    public void completeReturnItems(
+            Long orderId,
+            List<Long> orderItemIds,
+            Member member
+    ) {
+
+        Order order = getOrderDetail(orderId, member);
+
+        if (order.getStatus() != OrderStatus.PARTIAL_RETURN_REQUESTED
+                && order.getStatus() != OrderStatus.RETURN_REQUESTED) {
+            throw new IllegalArgumentException("반품 신청 상태의 주문만 반품 완료할 수 있습니다.");
+        }
+
+        List<OrderItem> returnItems =
+                orderItemRepository.findByOrderIdAndIdIn(orderId, orderItemIds);
+
+        if (returnItems.size() != orderItemIds.size()) {
+            throw new IllegalArgumentException("반품 완료 처리할 주문 상품 정보가 올바르지 않습니다.");
+        }
+
+        for (OrderItem orderItem : returnItems) {
+            orderItem.completeReturn();
+        }
+
+        boolean hasReturnRequestedItem =
+                orderItemRepository.existsByOrderIdAndStatus(
+                        orderId,
+                        OrderItemStatus.RETURN_REQUESTED
+                );
+
+        boolean hasOrderedItem =
+                orderItemRepository.existsByOrderIdAndStatus(
+                        orderId,
+                        OrderItemStatus.ORDERED
+                );
+
+        if (!hasReturnRequestedItem && hasOrderedItem) {
+            order.updateStatus(OrderStatus.PARTIAL_RETURN_COMPLETED);
+        } else if (!hasReturnRequestedItem) {
+            order.updateStatus(OrderStatus.RETURN_COMPLETED);
+        }
+    }  
+    
     private void recordCancelBuyBehavior(Long memberId, Long productId) {
         try {
-            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.CANCEL_BUY);
+            productWeightLogService.recordBehavior(
+                    memberId,
+                    productId,
+                    WeightLogType.CANCEL_BUY
+            );
         } catch (Exception e) {
-            log.warn("주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+            log.warn(
+                    "주문 behavior log(CANCEL_BUY) 기록 실패: memberId={}, productId={}",
+                    memberId,
+                    productId,
+                    e
+            );
         }
     }
 }

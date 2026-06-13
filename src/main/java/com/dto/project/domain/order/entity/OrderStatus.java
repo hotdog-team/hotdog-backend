@@ -11,5 +11,7 @@ public enum OrderStatus {
     PARTIAL_CANCELLED,    // 부분취소
     CANCELLED,            // 취소완료
     RETURN_REQUESTED,     // 반품신청
-    RETURN_COMPLETED      // 반품완료
+    RETURN_COMPLETED,     // 반품완료
+    PARTIAL_RETURN_REQUESTED,
+    PARTIAL_RETURN_COMPLETED
 }

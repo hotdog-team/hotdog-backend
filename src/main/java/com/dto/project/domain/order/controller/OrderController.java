@@ -5,6 +5,7 @@ import com.dto.project.domain.member.repository.MemberRepository;
 import com.dto.project.domain.order.dto.CheckoutRequest;
 import com.dto.project.domain.order.dto.CheckoutResponse;
 import com.dto.project.domain.order.dto.OrderItemCancelRequest;
+import com.dto.project.domain.order.dto.OrderItemReturnRequest;
 import com.dto.project.domain.order.dto.OrderRequest;
 import com.dto.project.domain.order.dto.OrderResponse;
 import com.dto.project.domain.order.dto.OrderReturnRequest;
@@ -145,4 +146,61 @@ public class OrderController {
 
 		return ResponseEntity.ok().build();
 	}
+    
+ // 주문 상품 부분 반품
+    @PostMapping("/{orderId}/return-items")
+    public ResponseEntity<Void> requestReturnItems(
+
+            @PathVariable Long orderId,
+
+            @RequestBody OrderItemReturnRequest request
+    ) {
+
+        Member member = getLoginMember();
+
+        orderService.requestReturnItems(
+
+                orderId,
+
+                request.getOrderItemIds(),
+
+                member,
+
+                OrderReturnRequest.builder()
+                        .reason(request.getReason())
+                        .detailReason(request.getDetailReason())
+                        .build()
+        );
+
+        return ResponseEntity.ok().build();
+    }
+    
+ // 전체 반품 완료
+    @PostMapping("/{orderId}/return-complete")
+    public ResponseEntity<Void> completeReturn(
+            @PathVariable Long orderId
+    ) {
+        Member member = getLoginMember();
+
+        orderService.completeReturn(orderId, member);
+
+        return ResponseEntity.ok().build();
+    }
+
+    // 주문 상품 부분 반품 완료
+    @PostMapping("/{orderId}/return-items-complete")
+    public ResponseEntity<Void> completeReturnItems(
+            @PathVariable Long orderId,
+            @RequestBody OrderItemReturnRequest request
+    ) {
+        Member member = getLoginMember();
+
+        orderService.completeReturnItems(
+                orderId,
+                request.getOrderItemIds(),
+                member
+        );
+
+        return ResponseEntity.ok().build();
+    }
 }
