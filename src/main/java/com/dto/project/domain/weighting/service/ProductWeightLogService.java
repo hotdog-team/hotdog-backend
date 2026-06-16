@@ -35,6 +35,7 @@ public class ProductWeightLogService {
 
     public static final String BEHAVIOR_QUEUE_KEY = "behavior:queue";
     public static final String CART_PENDING_KEY = "cart:pending";
+    private static final String DISLIKE_HIDE_KEY_PREFIX = "dislike:hide:";
 
     private final ProductWeightLogRepository productWeightLogRepository;
     private final ProductRepository productRepository;
@@ -49,12 +50,20 @@ public class ProductWeightLogService {
     // request 전체 받아 분할
     @Transactional
     public void recordLogs(ProductWeightLogRequest request) {
-        recordLogs(securityUtil.resolveMemberId(), request);
+        recordLogsInternal(securityUtil.resolveMemberId(), request);
     }
 
-    // memberId를 명시하여 처리(장바구니 및 구매는 백엔드 처리하도록 함)
     @Transactional
-    public void recordLogs(Long memberId, ProductWeightLogRequest request) {
+    public void recordBehavior(Long memberId, Long productId, WeightLogType actionType) {
+        ProductWeightLogRequest request = new ProductWeightLogRequest();
+        request.setProductId(productId);
+        request.setActionType(actionType);
+        request.setEventTimeStamp(LocalDateTime.now());
+        recordLogsInternal(memberId, request);
+    }
+
+    // 트랜잭션 위한 메서드 분리
+    private void recordLogsInternal(Long memberId, ProductWeightLogRequest request) {
         Long productId = request.getProductId();
 
         if (!productRepository.existsById(productId)) {
@@ -115,6 +124,10 @@ public class ProductWeightLogService {
             return;
         }
 
+        if (action == WeightLogType.CART || action == WeightLogType.BUY) {
+            clearDislikeHide(memberId, productId);
+        }
+
         Double configured = weightProps.getActionWeight().get(action);
         double weight = configured != null ? configured : 0;
 
@@ -166,20 +179,6 @@ public class ProductWeightLogService {
         }
 
         redisTemplate.opsForList().leftPush(BEHAVIOR_QUEUE_KEY, json);
-    }
-
-    public void recordBehavior(Long memberId, Long productId, WeightLogType actionType) {
-        ProductWeightLogRequest request = new ProductWeightLogRequest();
-        request.setProductId(productId);
-        request.setActionType(actionType);
-        request.setEventTimeStamp(LocalDateTime.now());
-        recordLogs(memberId, request);
-    }
-
-    public void recordBehaviors(Long memberId, Iterable<Long> productIds, WeightLogType actionType) {
-        for (Long productId : productIds) {
-            recordBehavior(memberId, productId, actionType);
-        }
     }
 
     //메서드 분리로 안정성 강화
@@ -407,6 +406,11 @@ public class ProductWeightLogService {
                     return Duration.between(last.getEventTimeStamp(), eventTimeStamp).abs().compareTo(due) < 0;
                 })
                 .orElse(false);
+    }
+
+    /** dislike 숨김만 해제 (가중치는 유지 — 장바구니/구매로 자연 회복) */
+    public void clearDislikeHide(Long memberId, Long productId) {
+        redisTemplate.opsForZSet().remove(DISLIKE_HIDE_KEY_PREFIX + memberId, String.valueOf(productId));
     }
 
     private double resolveViewAppliedWeight(Long memberId, Long productId) {

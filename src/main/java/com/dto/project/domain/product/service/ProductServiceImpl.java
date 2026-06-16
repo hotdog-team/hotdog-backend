@@ -42,7 +42,10 @@ public class ProductServiceImpl implements ProductService {
 
         List<Product> products = productRepository.searchProducts(condition);
 
-        if (!products.isEmpty()) {
+        // 검색 시에는 당분간 보지 않기가 적용되지 않도록 한다
+        boolean isKeywordSearch = condition.getKeyword() != null && !condition.getKeyword().isBlank();
+
+        if (!products.isEmpty() && !isKeywordSearch) {
             Set<String> hidden = redisTemplate.opsForZSet()
                     .rangeByScore("dislike:hide:" + memberId, System.currentTimeMillis(), Double.MAX_VALUE);
             if (hidden != null && !hidden.isEmpty()) {
