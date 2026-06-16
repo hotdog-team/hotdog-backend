@@ -19,8 +19,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ActionLogFlushScheduler {
 
-    //1 트랜잭션 = 500건으로 설정(팀내 policy 의거)
-    private static final int MAX_PER_RUN = 500;
+    //1 트랜잭션 = 1000건으로 설정(팀내 policy 의거)
+    private static final int MAX_PER_RUN = 1000;
 
     private final StringRedisTemplate redisTemplate;
     private final MemberTagWeightHotService memberTagWeightHotService;
