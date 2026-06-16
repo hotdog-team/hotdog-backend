@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -199,6 +200,7 @@ public class OrderService {
             order.updateStatus(OrderStatus.COMPLETED);
             orderRepository.save(order);
         }
+
         for (OrderItem orderItem : temporaryOrderItems) {
             if (orderItem.getProduct() != null) {
                 recordBuyBehavior(member.getId(), orderItem.getProduct().getId());
@@ -213,20 +215,46 @@ public class OrderService {
                     member.getId()
             );
         }
-        
+
         return order.getId();
     }
 
-    // 주문 목록 조회
+    // 주문 목록 조회 + 검색
     public Page<Order> getOrderHistory(
             Member member,
-            OrderStatus status,
+            String statusGroup,
+            Integer months,
             Pageable pageable
     ) {
-        if (status != null) {
-            return orderRepository.findByMemberAndStatusOrderByCreatedAtDesc(
+        LocalDateTime fromDate = null;
+
+        if (months != null) {
+            fromDate = LocalDateTime.now().minusMonths(months);
+        }
+
+        List<OrderStatus> statuses = getOrderStatusesByGroup(statusGroup);
+
+        if (statuses != null && fromDate != null) {
+            return orderRepository.findByMemberAndStatusInAndCreatedAtAfterOrderByCreatedAtDesc(
                     member,
-                    status,
+                    statuses,
+                    fromDate,
+                    pageable
+            );
+        }
+
+        if (statuses != null) {
+            return orderRepository.findByMemberAndStatusInOrderByCreatedAtDesc(
+                    member,
+                    statuses,
+                    pageable
+            );
+        }
+
+        if (fromDate != null) {
+            return orderRepository.findByMemberAndCreatedAtAfterOrderByCreatedAtDesc(
+                    member,
+                    fromDate,
                     pageable
             );
         }
@@ -235,6 +263,40 @@ public class OrderService {
                 member,
                 pageable
         );
+    }
+
+    private List<OrderStatus> getOrderStatusesByGroup(String statusGroup) {
+        if (statusGroup == null || statusGroup.isBlank() || "ALL".equals(statusGroup)) {
+            return null;
+        }
+
+        return switch (statusGroup) {
+            case "PENDING" -> List.of(
+                    OrderStatus.PENDING,
+                    OrderStatus.PROCESSING
+            );
+
+            case "SHIPPING" -> List.of(
+                    OrderStatus.COMPLETED,
+                    OrderStatus.BEFORE_SHIPMENT,
+                    OrderStatus.IN_TRANSIT
+            );
+
+            case "DELIVERED" -> List.of(
+                    OrderStatus.DELIVERED,
+                    OrderStatus.PARTIAL_RETURN_REQUESTED,
+                    OrderStatus.PARTIAL_RETURN_COMPLETED
+            );
+
+            case "CANCEL_RETURN" -> List.of(
+                    OrderStatus.PARTIAL_CANCELLED,
+                    OrderStatus.CANCELLED,
+                    OrderStatus.RETURN_REQUESTED,
+                    OrderStatus.RETURN_COMPLETED
+            );
+
+            default -> null;
+        };
     }
 
     // 주문 상세 조회
@@ -258,26 +320,22 @@ public class OrderService {
     public void cancelOrder(Long orderId, Member member) {
 
         Order order = getOrderDetail(orderId, member);
-        // 배송중이거나 배송완료 상태는 취소 불가
+
         if (order.getStatus() == OrderStatus.IN_TRANSIT || order.getStatus() == OrderStatus.DELIVERED) {
             throw new IllegalArgumentException("이미 배송 중이거나 완료된 상품은 취소할 수 없습니다.");
         }
 
-        // 주문 상품 전체 취소
         for (OrderItem orderItem : order.getOrderItems()) {
 
-            // 이미 취소된 상품은 제외
             if (orderItem.getStatus() == OrderItemStatus.CANCELLED) {
                 continue;
             }
 
-            // 사내 상품 재고 복구 & 판매량 복구
             if (orderItem.getProduct() != null) {
                 orderItem.getProduct().increaseStock(orderItem.getQuantity());
                 orderItem.getProduct().decreaseSalesCount(orderItem.getQuantity());
             }
 
-            // 주문 상품 상태 변경
             orderItem.cancel();
 
             if (orderItem.getProduct() != null) {
@@ -285,7 +343,6 @@ public class OrderService {
             }
         }
 
-        // 주문 상태 취소 완료
         order.cancel();
     }
 
@@ -299,36 +356,28 @@ public class OrderService {
 
         Order order = getOrderDetail(orderId, member);
 
-        // 배송중이거나 배송완료 상태는 취소 불가
         if (order.getStatus() == OrderStatus.IN_TRANSIT || order.getStatus() == OrderStatus.DELIVERED) {
-
             throw new IllegalArgumentException("이미 배송 중이거나 완료된 상품은 취소할 수 없습니다.");
         }
 
-        // 취소할 주문 상품 조회
         List<OrderItem> cancelItems =
                 orderItemRepository.findByOrderIdAndIdIn(orderId, orderItemIds);
 
-        // 요청한 주문 상품이 실제 주문 상품과 일치하는지 검증
         if (cancelItems.size() != orderItemIds.size()) {
             throw new IllegalArgumentException("취소할 주문 상품 정보가 올바르지 않습니다.");
         }
 
-        // 선택한 주문 상품 취소
         for (OrderItem orderItem : cancelItems) {
 
-            // 이미 취소된 상품인지 검증
             if (orderItem.getStatus() == OrderItemStatus.CANCELLED) {
                 throw new IllegalStateException("이미 취소된 주문 상품입니다.");
             }
 
-            // 사내 상품 재고 복구 & 판매량 감소
             if (orderItem.getProduct() != null) {
                 orderItem.getProduct().increaseStock(orderItem.getQuantity());
                 orderItem.getProduct().decreaseSalesCount(orderItem.getQuantity());
             }
 
-            // 주문 상품 상태 변경
             orderItem.cancel();
 
             if (orderItem.getProduct() != null) {
@@ -336,11 +385,9 @@ public class OrderService {
             }
         }
 
-        // 남아있는 주문 상품이 있는지 확인
         boolean hasOrderedItem =
                 orderItemRepository.existsByOrderIdAndStatus(orderId, OrderItemStatus.ORDERED);
 
-        // 모두 취소되면 전체 취소, 일부만 취소되면 부분 취소
         if (hasOrderedItem) {
             order.updateStatus(OrderStatus.PARTIAL_CANCELLED);
         } else {
@@ -348,16 +395,7 @@ public class OrderService {
         }
     }
 
-    private void recordBuyBehavior(Long memberId, Long productId) {
-        try {
-            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.BUY);
-        } catch (Exception e) {
-            log.warn("주문 behavior log(BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
-        }
-    }
-
-
- // 반품
+    // 반품
     @Transactional
     public void requestReturn(
             Long orderId,
@@ -384,7 +422,7 @@ public class OrderService {
 
         order.updateStatus(OrderStatus.RETURN_REQUESTED);
     }
-    
+
     @Transactional
     public void requestReturnItems(
             Long orderId,
@@ -422,7 +460,6 @@ public class OrderService {
         }
 
         for (OrderItem orderItem : returnItems) {
-
             orderItem.requestReturn();
         }
 
@@ -433,20 +470,13 @@ public class OrderService {
                 );
 
         if (hasOrderedItem) {
-
-            order.updateStatus(
-                    OrderStatus.PARTIAL_RETURN_REQUESTED
-            );
-
+            order.updateStatus(OrderStatus.PARTIAL_RETURN_REQUESTED);
         } else {
-
-            order.updateStatus(
-                    OrderStatus.RETURN_REQUESTED
-            );
+            order.updateStatus(OrderStatus.RETURN_REQUESTED);
         }
     }
-    
- // 전체 반품 완료
+
+    // 전체 반품 완료
     @Transactional
     public void completeReturn(Long orderId, Member member) {
 
@@ -508,8 +538,16 @@ public class OrderService {
         } else if (!hasReturnRequestedItem) {
             order.updateStatus(OrderStatus.RETURN_COMPLETED);
         }
-    }  
-    
+    }
+
+    private void recordBuyBehavior(Long memberId, Long productId) {
+        try {
+            productWeightLogService.recordBehavior(memberId, productId, WeightLogType.BUY);
+        } catch (Exception e) {
+            log.warn("주문 behavior log(BUY) 기록 실패: memberId={}, productId={}", memberId, productId, e);
+        }
+    }
+
     private void recordCancelBuyBehavior(Long memberId, Long productId) {
         try {
             productWeightLogService.recordBehavior(

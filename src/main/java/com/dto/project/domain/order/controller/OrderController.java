@@ -40,14 +40,17 @@ public class OrderController {
     // 구매 내역 조회
     @GetMapping
     public ResponseEntity<Page<OrderResponse>> getMyOrders(
-            @RequestParam(required = false) OrderStatus status,
+    		@RequestParam(required = false) String statusGroup,
+
+    		@RequestParam(required = false)
+    		Integer months,
             @PageableDefault(size = 10, sort = "createdAt")
             Pageable pageable
     ) {
         Member member = getLoginMember();
 
         Page<OrderResponse> orders =
-                orderService.getOrderHistory(member, status, pageable)
+        		orderService.getOrderHistory(member, statusGroup, months, pageable)
                         .map(orderService::toOrderResponse);
 
         return ResponseEntity.ok(orders);

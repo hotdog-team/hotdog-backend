@@ -55,4 +55,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status != :status")
     Long sumTotalAmountByStatusNot(@Param("status") OrderStatus status);
 
+    
+    Page<Order> findByMemberAndCreatedAtAfterOrderByCreatedAtDesc(
+            Member member,
+            LocalDateTime createdAt,
+            Pageable pageable
+    );
+
+    Page<Order> findByMemberAndStatusInOrderByCreatedAtDesc(
+            Member member,
+            List<OrderStatus> statuses,
+            Pageable pageable
+    );
+
+    Page<Order> findByMemberAndStatusInAndCreatedAtAfterOrderByCreatedAtDesc(
+            Member member,
+            List<OrderStatus> statuses,
+            LocalDateTime createdAt,
+            Pageable pageable
+    );
 }
