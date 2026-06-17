@@ -60,6 +60,11 @@ public class OrderService {
                 throw new IllegalArgumentException("본인의 장바구니만 주문할 수 있습니다.");
             }
 
+            Product cartProduct = cart.getProduct();
+            if (cartProduct != null) {
+                validatePurchasableProduct(cartProduct, cart.getQuantity());
+            }
+
             int unitPrice = cart.getPrice();
             int totalPrice = unitPrice * cart.getQuantity();
             int itemDeliveryFee = cart.getProduct().getDeliveryFee() != null
@@ -103,6 +108,8 @@ public class OrderService {
         if (quantity <= 0) {
             throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
         }
+
+        validatePurchasableProduct(product, quantity);
 
         int unitPrice = product.getPrice();
         int totalPrice = unitPrice * quantity;
@@ -156,6 +163,8 @@ public class OrderService {
                                 HttpStatus.NOT_FOUND,
                                 "사내 상품을 찾을 수 없습니다."
                         ));
+
+                validatePurchasableProduct(product, itemDto.getQuantity());
 
                 product.decreaseStock(itemDto.getQuantity());
 
@@ -587,5 +596,22 @@ public class OrderService {
                 .filter(url -> url != null && !url.isBlank())
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void validatePurchasableProduct(Product product, int quantity) {
+        if (!"ON_SALE".equals(product.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "판매 중인 상품만 구매할 수 있습니다."
+            );
+        }
+
+        int stock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+        if (stock < quantity) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "재고가 부족합니다."
+            );
+        }
     }
 }

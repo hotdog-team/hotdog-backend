@@ -100,10 +100,12 @@ public class Product {
 
     // 비즈니스 로직 (재고 차감)
     public void decreaseStock(int quantity) {
-        if (this.stockQuantity < quantity) {
-            throw new IllegalArgumentException("재고가 부족합니다. (현재 재고: " + this.stockQuantity + "개)");
+        int currentStock = this.stockQuantity != null ? this.stockQuantity : 0;
+        if (currentStock < quantity) {
+            throw new IllegalArgumentException("재고가 부족합니다. (현재 재고: " + currentStock + "개)");
         }
-        this.stockQuantity -= quantity;
+        this.stockQuantity = currentStock - quantity;
+        syncStockStatus();
     }
 
     // 해당 상품 판매량 증가
@@ -120,7 +122,23 @@ public class Product {
     
     // 비즈니스 로직 (재고 복구)
     public void increaseStock(int quantity) {
-        this.stockQuantity += quantity;
+        int currentStock = this.stockQuantity != null ? this.stockQuantity : 0;
+        this.stockQuantity = currentStock + quantity;
+        syncStockStatus();
+    }
+
+    // 재고 수량에 따라 판매 상태 동기화 (SOLD_OUT ↔ ON_SALE)
+    public void syncStockStatus() {
+        int stock = this.stockQuantity != null ? this.stockQuantity : 0;
+        if (stock <= 0) {
+            if (!"SOLD_OUT".equals(this.status)) {
+                changeStatus("SOLD_OUT");
+            }
+            return;
+        }
+        if ("SOLD_OUT".equals(this.status)) {
+            changeStatus("ON_SALE");
+        }
     }
 
     // 해당 상품 판매량 감소
