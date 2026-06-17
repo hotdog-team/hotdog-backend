@@ -52,6 +52,13 @@ public class AddressController {
         return addressService.updateAddress(memberId, id, request);
     }
 
+    // 기본 배송지 설정
+    @PatchMapping("/{id}/default")
+    public AddressResponse setDefaultAddress(@PathVariable Long id) {
+        Long memberId = securityUtil.resolveMemberId();
+        return addressService.setDefaultAddress(memberId, id);
+    }
+
     // 배송지 삭제
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -105,6 +105,19 @@ public class AddressService {
         return AddressResponse.from(address);
     }
 
+    // 기본 배송지 설정
+    @Transactional
+    public AddressResponse setDefaultAddress(Long memberId, Long addressId) {
+
+        Address address = addressRepository.findByIdAndMemberIdAndStatus(addressId, memberId, "ACTIVE")
+                .orElseThrow(() -> new IllegalArgumentException("배송지를 찾을 수 없습니다."));
+
+        clearDefaultAddress(memberId);
+        address.setDefault(true);
+
+        return AddressResponse.from(address);
+    }
+
     // 배송지 삭제
     @Transactional
     public void deleteAddress(Long memberId, Long addressId) {

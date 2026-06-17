@@ -14,6 +14,8 @@ public class ProductSearchCondition {
     private String sort;
     private String match;
     private List<Long> metaTagIds;
+    private Integer minPrice;
+    private Integer maxPrice;
     private Integer size;
     private Integer page;
 }

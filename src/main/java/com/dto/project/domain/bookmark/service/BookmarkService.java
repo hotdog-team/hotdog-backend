@@ -14,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -57,6 +55,7 @@ public class BookmarkService {
     @Transactional(readOnly = true)
     public Page<BookmarkResponse> getBookmarks(
             Long memberId,
+            Long categoryId,
             Pageable pageable
     ) {
 
@@ -65,7 +64,7 @@ public class BookmarkService {
                         new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
         return bookmarkRepository
-                .findAllByMember(member, pageable)
+                .findByMemberAndCategoryId(member, categoryId, pageable)
                 .map(BookmarkResponse::from);
     }
 }

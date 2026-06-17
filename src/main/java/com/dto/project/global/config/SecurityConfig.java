@@ -56,6 +56,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/members/me").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**",
+                                "/api/categories",
+                                "/api/categories/**",
+                                "/api/search/popular",
+                                "/api/tags",
+                                "/api/tags/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/search/log").permitAll()
+
                         // 리뷰 관련 설정
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/*/reviews").permitAll()
                         .requestMatchers("/api/orders/items/*/reviews", "/api/reviews/**").authenticated()

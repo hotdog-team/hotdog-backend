@@ -408,7 +408,7 @@ public class ProductWeightLogService {
                 .orElse(false);
     }
 
-    /** dislike 숨김만 해제 (가중치는 유지 — 장바구니/구매로 자연 회복) */
+    // 당분간 보지 않기 해제 처리
     public void clearDislikeHide(Long memberId, Long productId) {
         redisTemplate.opsForZSet().remove(DISLIKE_HIDE_KEY_PREFIX + memberId, String.valueOf(productId));
     }

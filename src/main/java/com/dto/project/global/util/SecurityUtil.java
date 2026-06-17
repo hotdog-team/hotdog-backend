@@ -7,24 +7,31 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
+
 @Component
 public class SecurityUtil {
 
     public Long resolveMemberId() {
+        return resolveMemberIdOptional()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED));
+    }
+
+    public Optional<Long> resolveMemberIdOptional() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED);
+            return Optional.empty();
         }
 
         Object principal = auth.getPrincipal();
         if (!(principal instanceof String value) || value.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED);
+            return Optional.empty();
         }
 
         try {
-            return Long.parseLong(value.trim());
+            return Optional.of(Long.parseLong(value.trim()));
         } catch (NumberFormatException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, DefaultErrorDetailMessages.LOGIN_REQUIRED);
+            return Optional.empty();
         }
     }
 }

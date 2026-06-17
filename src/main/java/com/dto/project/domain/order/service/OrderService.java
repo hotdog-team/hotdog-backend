@@ -8,6 +8,8 @@ import com.dto.project.domain.order.entity.*;
 import com.dto.project.domain.order.repository.OrderItemRepository;
 import com.dto.project.domain.order.repository.OrderRepository;
 import com.dto.project.domain.product.entity.Product;
+import com.dto.project.domain.product.entity.ProductImage;
+import com.dto.project.domain.product.repository.ProductImageRepository;
 import com.dto.project.domain.product.repository.ProductRepository;
 import com.dto.project.domain.review.repository.ReviewRepository;
 import com.dto.project.domain.weighting.entity.WeightLogType;
@@ -34,6 +36,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final CartRepository cartRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductWeightLogService productWeightLogService;
@@ -59,6 +62,9 @@ public class OrderService {
 
             int unitPrice = cart.getPrice();
             int totalPrice = unitPrice * cart.getQuantity();
+            int itemDeliveryFee = cart.getProduct().getDeliveryFee() != null
+                    ? cart.getProduct().getDeliveryFee()
+                    : 0;
 
             items.add(CheckoutResponse.Item.builder()
                     .cartId(cart.getId())
@@ -69,14 +75,20 @@ public class OrderService {
                     .unitPrice(unitPrice)
                     .totalPrice(totalPrice)
                     .discountRate(cart.getProduct().getDiscountRate())
+                    .deliveryFee(itemDeliveryFee)
                     .build());
 
             totalAmount += totalPrice;
         }
 
+        int deliveryFee = items.stream()
+                .mapToInt(item -> item.getDeliveryFee() != null ? item.getDeliveryFee() : 0)
+                .sum();
+
         return CheckoutResponse.builder()
                 .items(items)
                 .totalAmount(totalAmount)
+                .deliveryFee(deliveryFee)
                 .build();
     }
 
@@ -94,21 +106,25 @@ public class OrderService {
 
         int unitPrice = product.getPrice();
         int totalPrice = unitPrice * quantity;
+        int itemDeliveryFee = product.getDeliveryFee() != null ? product.getDeliveryFee() : 0;
+        String imageUrl = resolveProductImageUrl(product.getId());
 
         CheckoutResponse.Item item = CheckoutResponse.Item.builder()
                 .cartId(null)
                 .productId(product.getId())
                 .productName(product.getName())
-                .imageUrl(null)
+                .imageUrl(imageUrl)
                 .quantity(quantity)
                 .unitPrice(unitPrice)
                 .totalPrice(totalPrice)
                 .discountRate(product.getDiscountRate())
+                .deliveryFee(itemDeliveryFee)
                 .build();
 
         return CheckoutResponse.builder()
                 .items(List.of(item))
                 .totalAmount(totalPrice)
+                .deliveryFee(itemDeliveryFee)
                 .build();
     }
 
@@ -563,5 +579,13 @@ public class OrderService {
                     e
             );
         }
+    }
+
+    private String resolveProductImageUrl(Long productId) {
+        return productImageRepository.findByProductIdOrderByMainFirst(productId).stream()
+                .map(ProductImage::getImageUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .findFirst()
+                .orElse(null);
     }
 }

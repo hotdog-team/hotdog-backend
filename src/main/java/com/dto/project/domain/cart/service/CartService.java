@@ -98,7 +98,8 @@ public class CartService {
                             cart.getQuantity(),
                             getThumbnailImage(product),
                             product.getDiscountRate(),
-                            product.getSalePrice()
+                            product.getSalePrice(),
+                            product.getDeliveryFee() != null ? product.getDeliveryFee() : 0
                     );
                 })
                 .toList();

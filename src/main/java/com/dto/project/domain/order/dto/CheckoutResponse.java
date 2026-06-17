@@ -13,6 +13,7 @@ public class CheckoutResponse {
 
     private List<Item> items;
     private Integer totalAmount;
+    private Integer deliveryFee;
 
     @Getter
     @Builder
@@ -26,5 +27,6 @@ public class CheckoutResponse {
         private Integer unitPrice;
         private Integer totalPrice;
         private Integer discountRate;
+        private Integer deliveryFee;
     }
 }

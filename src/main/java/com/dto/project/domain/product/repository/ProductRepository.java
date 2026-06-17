@@ -61,7 +61,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             @Param("percent") int percent);
     
     // 동일 카테고리 상품 조회
-    List<Product> findTop4ByCategoryIdAndStatusAndIdNot(
+    List<Product> findTop5ByCategoryIdAndStatusAndIdNot(
             Long categoryId,
             String status,
             Long productId
