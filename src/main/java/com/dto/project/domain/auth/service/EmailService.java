@@ -27,7 +27,6 @@ public class EmailService {
 
             String content =
                     "<div style='font-family: sans-serif; color: #071431;'>" +
-                            "  <p>안녕하세요. [D-TO] 임직원 전용 스토어입니다.</p>" +
                             "  <p>아래 링크를 클릭하여 비밀번호 재설정을 완료해 주세요.</p>" +
                             "  <p><b>링크 유효 시간은 30분입니다.</b></p>" +
                             "  <div style='margin: 25px 0;'>" +
