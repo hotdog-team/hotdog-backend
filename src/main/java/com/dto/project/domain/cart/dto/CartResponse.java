@@ -15,4 +15,5 @@ public class CartResponse {
     private String thumbnailImage;
     private Integer discountRate;
     private Integer salePrice;
+    private Integer deliveryFee;
 }

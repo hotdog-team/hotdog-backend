@@ -17,6 +17,7 @@ public class MemberResponse {
     private List<Long> profileTagIds;
     @JsonProperty("isJobRecommendEnabled")
     private boolean isJobRecommendEnabled;
+    private String role;
 
     private String zipCode;
     private String baseAddress;

@@ -93,6 +93,7 @@ public class MemberService {
                 .ageRange(member.getAgeRange())
                 .profileTagIds(memberTagWeightService.findProfileTagIds(member))
                 .isJobRecommendEnabled(member.isJobRecommendEnabled())
+                .role(member.getRole().name())
                 .zipCode(address != null ? address.getZipCode() : null)
                 .baseAddress(address != null ? address.getBaseAddress() : null)
                 .detailAddress(address != null ? address.getDetailAddress() : null)

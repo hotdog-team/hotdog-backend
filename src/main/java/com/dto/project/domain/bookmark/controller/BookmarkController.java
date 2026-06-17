@@ -36,9 +36,10 @@ public class BookmarkController {
 
     @GetMapping
     public Page<BookmarkResponse> getBookmarks(
+            @RequestParam(required = false) Long categoryId,
             Pageable pageable
     ) {
         Long memberId = securityUtil.resolveMemberId();
-        return bookmarkService.getBookmarks(memberId, pageable);
+        return bookmarkService.getBookmarks(memberId, categoryId, pageable);
     }
 }
