@@ -20,6 +20,7 @@ public class BookmarkResponse {
     private Integer discountRate;
     private Integer salePrice;
     private Long categoryId;
+    private String status;
 
     public static BookmarkResponse from(Bookmark bookmark) {
         return BookmarkResponse.builder()
@@ -32,6 +33,7 @@ public class BookmarkResponse {
                 .salePrice(bookmark.getProduct().getSalePrice())
                 .discountRate(bookmark.getProduct().getDiscountRate())
                 .categoryId(bookmark.getProduct().getCategoryId())
+                .status(bookmark.getProduct().getStatus())
                 .imageUrl(resolveImageUrl(bookmark.getProduct()))
                 .build();
     }

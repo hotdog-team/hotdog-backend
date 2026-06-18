@@ -65,7 +65,11 @@ public class AdminProductService {
         product.setAltText(request.getAltText());
         product.setWeightScore(0.0);
 
-        product.setStatus("ON_SALE");
+        if (request.getStockQuantity() != null && request.getStockQuantity() <= 0) {
+            product.setStatus("SOLD_OUT");
+        } else {
+            product.setStatus("ON_SALE");
+        }
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
 
@@ -110,6 +114,14 @@ public class AdminProductService {
         );
 
         product.setDiscountRate(discountRateToUpdate);
+
+        if (request.getStockQuantity() != null && request.getStockQuantity() > 0) {
+            product.changeStatus("ON_SALE");
+        } else if (request.getStockQuantity() != null) {
+            product.changeStatus("SOLD_OUT");
+        } else {
+            product.syncStockStatus();
+        }
 
         if (product.getStatus() == null) {
             product.setStatus("ON_SALE");
