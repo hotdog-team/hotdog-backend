@@ -27,6 +27,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "target/*.jar"
           target: "/home/ubuntu/"
+          strip_components: 1
 
       - name: Restart Server
         uses: appleboy/ssh-action@master
@@ -36,4 +37,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo fuser -k 8080/tcp || true
-            nohup java -jar /home/ubuntu/target/project-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod > /home/ubuntu/log.txt 2>&1 &
+            
+            chmod +x /home/ubuntu/*.jar
+            
+            nohup java -jar /home/ubuntu/project-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod > /home/ubuntu/log.txt 2>&1 &

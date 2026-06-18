@@ -41,4 +41,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                                Pageable pageable);
 
     Optional<Member> findByProviderAndProviderId(String provider, String providerId);
+
+    java.util.List<Member> findAllByProviderAndProviderId(String provider, String providerId);
 }
