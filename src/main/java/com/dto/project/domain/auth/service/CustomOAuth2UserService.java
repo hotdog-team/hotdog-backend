@@ -52,6 +52,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         } else if ("kakao".equals(registrationId)) {
             return String.valueOf(attributes.get("id")); // 카카오 고유 식별자
         }
-        return (String) attributes.get("sub"); // 구글 고유 식별자
+        return String.valueOf(attributes.get("sub")); // 구글 고유 식별자
     }
 }
