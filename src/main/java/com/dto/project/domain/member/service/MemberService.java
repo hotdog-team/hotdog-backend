@@ -72,6 +72,8 @@ public class MemberService {
             // 기존 발급된 인증 토큰은 만료 전까지 재사용 불가능하도록 블랙리스트 등록 (유효시간 2시간 설정)
             redisTemplate.opsForValue().set(accessToken, "withdrawn", 2, TimeUnit.HOURS);
         }
+
+        redisTemplate.opsForValue().set("withdrawing_member:" + member.getEmail(), "cooling_off", 30, TimeUnit.DAYS);
     }
 
     // 3. 회원 정보 조회 (프로필 페이지용)
