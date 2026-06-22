@@ -46,7 +46,7 @@ public class MemberTagWeight {
     //프로필 수정에 따른 가중치 점수 조정 로직
     public void adjustProfileScore(int delta) {
         int current = this.profileScore != null ? this.profileScore : 0;
-        this.profileScore = current + delta;
+        this.profileScore = Math.max(0, current + delta);
     }
 
     public void adjustWeightScore(double delta) {
