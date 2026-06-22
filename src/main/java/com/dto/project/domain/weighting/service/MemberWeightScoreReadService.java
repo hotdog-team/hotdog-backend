@@ -44,10 +44,10 @@ public class MemberWeightScoreReadService {
         Map<Long, Double> hotDeltaMap = memTagHotScores == null
                 ? Map.of()
                 : memTagHotScores.stream()
-                        .collect(Collectors.toMap(
-                                MemberTagHotScore::getMetaTagId,
-                                MemberTagHotScore::getHotDelta
-                        ));
+                .collect(Collectors.toMap(
+                        MemberTagHotScore::getMetaTagId,
+                        MemberTagHotScore::getHotDelta
+                ));
 
         Set<Long> allTagIds = new HashSet<>(dbScoreMap.keySet());
         allTagIds.addAll(hotDeltaMap.keySet());

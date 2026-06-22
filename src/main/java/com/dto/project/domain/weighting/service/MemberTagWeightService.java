@@ -89,7 +89,7 @@ public class MemberTagWeightService {
         Long newTagId = newTag.map(MetaTagEntity::getId).orElse(null);
         for (MemberTagWeight weight : current) {
             if (!weight.getMetaTag().getId().equals(newTagId)) {
-                adjustProfileOrDelete(weight, -baseScore);
+                revokeProfileScore(weight, baseScore);
             }
         }
 
@@ -126,7 +126,7 @@ public class MemberTagWeightService {
             Long tagId = weight.getMetaTag().getId();
             currentTagIds.add(tagId);
             if (!newTagIds.contains(tagId)) {
-                adjustProfileOrDelete(weight, -baseScore);
+                revokeProfileScore(weight, baseScore);
             }
         }
 
@@ -190,6 +190,14 @@ public class MemberTagWeightService {
                         },
                         () -> memberTagWeightRepository.save(buildProfileWeight(member, metaTag, delta))
                 );
+    }
+
+    private void revokeProfileScore(MemberTagWeight weight, int maxRevoke) {
+        int current = weight.getProfileScore() != null ? weight.getProfileScore() : 0;
+        if (current <= 0) {
+            return;
+        }
+        adjustProfileOrDelete(weight, -Math.min(maxRevoke, current));
     }
 
     private void adjustProfileOrDelete(MemberTagWeight weight, int delta) {
