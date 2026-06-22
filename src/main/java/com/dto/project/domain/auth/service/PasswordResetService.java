@@ -80,4 +80,14 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
         log.info("회원 ID {}의 비밀번호가 성공적으로 재설정되었습니다.", member.getId());
     }
+
+    @Transactional(readOnly = true)
+    public void validateToken(String token) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 링크입니다."));
+
+        if (resetToken.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.GONE, "만료된 토큰입니다. 다시 요청해 주세요.");
+        }
+    }
 }

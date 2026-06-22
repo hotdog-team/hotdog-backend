@@ -28,15 +28,15 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        // 2. 소셜 고유 식별자(PK) 추출
+        // 2. 소셜 고유 식별자(PK) 및 이메일 추출
         String providerId = extractProviderId(registrationId, attributes);
+        String email = extractEmail(registrationId, attributes);
 
-        // 3. DB 자동 저장 로직 삭제! 대신 핸들러로 전달하기 위해 Map에 추가
+        // 3. 핸들러로 전달하기 위해 Map에 추가
         Map<String, Object> customAttributes = new HashMap<>(attributes);
         customAttributes.put("provider", registrationId);
         customAttributes.put("providerId", providerId);
-
-        System.out.println("소셜 인증 성공 - Provider: " + registrationId + ", ID: " + providerId);
+        customAttributes.put("email", email);
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
@@ -53,5 +53,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             return String.valueOf(attributes.get("id")); // 카카오 고유 식별자
         }
         return String.valueOf(attributes.get("sub")); // 구글 고유 식별자
+    }
+
+    private String extractEmail(String registrationId, Map<String, Object> attributes) {
+        if ("naver".equals(registrationId)) {
+            Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+            return (String) response.get("email");
+        } else if ("kakao".equals(registrationId)) {
+            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+            return kakaoAccount != null ? (String) kakaoAccount.get("email") : null;
+        }
+        return (String) attributes.get("email"); // 구글
     }
 }

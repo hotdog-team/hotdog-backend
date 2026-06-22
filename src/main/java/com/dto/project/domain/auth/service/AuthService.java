@@ -33,6 +33,9 @@ public class AuthService {
     // 1. 회원가입
     @Transactional
     public void signup(SignupRequest request) {
+        if (Boolean.TRUE.equals(redisTemplate.hasKey("withdrawing_member:" + request.getEmail()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "탈퇴 후 30일 동안은 재가입이 불가능합니다.");
+        }
         if (memberRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, DefaultErrorDetailMessages.DUPLICATED_VALUES);
         }
@@ -62,6 +65,9 @@ public class AuthService {
     // 2. 로그인
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        if (Boolean.TRUE.equals(redisTemplate.hasKey("withdrawing_member:" + request.getEmail()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "탈퇴 대기 중인 계정입니다. 30일 후 재가입이 가능합니다.");
+        }
         Member member = memberRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, DefaultErrorDetailMessages.LOGIN_FAILED));
 
@@ -85,7 +91,6 @@ public class AuthService {
 
         return new AuthResponse(accessToken, refreshToken, member.getId(), member.getEmail(), member.getName(), member.getRole().name());
     }
-
 
     // 3. 로그아웃
     @Transactional
